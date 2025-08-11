@@ -95,7 +95,7 @@
   const count = $('#count');
   const filterEl = $('#filter');
 
- // const SKU_RE = /^\\d{4,5}$/;
+  const SKU_RE = /^\\d{4,5}$/;
   const LOC_RE = /^[A-Z]\\d+-\\d+$/i;
 
   let db;
@@ -138,7 +138,7 @@
   async function save(){
     const sku = skuEl.value.trim();
     const location = locEl.value.trim().toUpperCase();
-    if(!SKU_RE.test(sku)) return toast('שגיאה: מק"\ט חייב להיות 4–5 ספרות.');
+ //   if(!SKU_RE.test(sku)) return toast('שגיאה: מק"\ט חייב להיות 4–5 ספרות.');
     if(!LOC_RE.test(location)) return toast('שגיאה: מיקום בפורמט A1-1.');
     const item = { sku, location, updatedAt: Date.now() };
     await withStore('readwrite', st => st.put(item));
