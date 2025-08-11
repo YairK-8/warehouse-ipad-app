@@ -1,249 +1,249 @@
 <!doctype html>
-
 <html lang="he" dir="rtl">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
-<title>ניהול מחסן — מק"ט ומיקום</title>
-<style>
-  :root {
-    --bg: #0b0c0f; --card:#14161a; --muted:#a8b0bb; --text:#e9eef5; --accent:#4da3ff; --danger:#ff6b6b; --ok:#34d399;
-  }
-  html,body{height:100%;}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;}
-  .wrap{max-width:920px;margin:0 auto;padding:24px;}
-  h1{font-size:1.4rem;margin:0 0 16px;}
-  .card{background:var(--card);border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.35);padding:16px;}
-  .grid{display:grid;gap:12px;}
-  @media(min-width:640px){.grid.cols-2{grid-template-columns:1fr 1fr}}
-  label{font-size:.9rem;color:var(--muted)}
-  input[type=text]{width:100%;padding:14px 12px;border:1px solid #22272e;background:#0f1115;color:var(--text);border-radius:12px;font-size:1.05rem;}
-  input::placeholder{color:#667085}
-  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  button{appearance:none;border:0;border-radius:12px;padding:14px 16px;background:#1b2330;color:var(--text);font-size:1.05rem;line-height:1;cursor:pointer}
-  button.primary{background:linear-gradient(180deg,#2563eb,#1d4ed8)}
-  button.ghost{background:#10151c;border:1px solid #232b36}
-  button.ok{background:#0b3a2b;border:1px solid #165f48}
-  button.danger{background:#3a0b0b;border:1px solid #5f1616}
-  button:disabled{opacity:.5;cursor:not-allowed}
-  .helper{font-size:.82rem;color:var(--muted)}
-  .table{width:100%;border-collapse:collapse;margin-top:12px}
-  .table th,.table td{padding:12px;border-bottom:1px solid #232b36;text-align:right}
-  .table th{font-weight:600;color:#c0cad6}
-  .pill{display:inline-block;padding:.22rem .55rem;border-radius:999px;background:#0f1724;border:1px solid #243043;color:#cde3ff;font-size:.85rem}
-  .status{margin-top:10px;font-size:.9rem;color:var(--muted)}
-  .search{display:flex;gap:8px}
-  .badge{font-size:.8rem;color:#9aa4b2}
-</style>
+  <meta charset="utf-8">
+  <title>מחסן מינימלי — חיפוש מק״ט למיקום</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root{--bg:#f7f7fb;--card:#fff;--accent:#2563eb;--text:#0f172a}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:var(--bg); color:var(--text)}
+    .wrap{max-width:680px;margin:40px auto;padding:16px}
+    .card{background:var(--card);border-radius:18px;box-shadow:0 10px 25px rgba(0,0,0,.06);padding:20px}
+    h1{font-size:22px;margin:0 0 12px}
+    p.note{margin:0 0 16px;color:#475569}
+    label{display:block;margin:10px 0 6px}
+    input,button{font:inherit}
+    input[type=text]{width:100%;padding:12px 14px;border:1px solid #e2e8f0;border-radius:12px;outline:none}
+    input[type=text]:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .row > *{flex:1}
+    button{padding:12px 14px;border:none;border-radius:12px;cursor:pointer}
+    .primary{background:var(--accent);color:#fff}
+    .ghost{background:#eef2ff;color:#1e293b}
+    .danger{background:#ef4444;color:#fff}
+    .muted{color:#64748b}
+    .result{margin-top:14px;padding:12px 14px;background:#ecfeff;border:1px solid #bae6fd;border-radius:12px}
+    .list{margin-top:20px}
+    table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden}
+    th,td{padding:10px 12px;border-bottom:1px solid #e2e8f0;text-align:right}
+    th{background:#eef2ff}
+    .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;background:#e2e8f0;padding:2px 6px;border-radius:6px}
+    .flex{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+    .pill{display:inline-block;padding:4px 10px;background:#f1f5f9;border-radius:999px;font-size:12px}
+  </style>
 </head>
-
-  
 <body>
   <div class="wrap">
-    <h1>ניהול מחסן — מק"ט ↔ מיקום</h1>
+    <div class="card">
+      <h1>מחסן מינימלי</h1>
+      <p class="note">מקלידים מק״ט (4–5 ספרות) ➜ מקבלים את המיקום. אפשר להוסיף/לעדכן.</p>
 
-    <div class="card grid cols-2" style="gap:16px">
-      <div>
-        <label for="sku">מק"ט (4–5 ספרות)</label>
-        <input id="sku" type="text" inputmode="numeric"aceholder="למשל 10742" autocomplete="off" />
-        <div class="helper">חייב להיות 4–5 ספרות בלבד.</div>
-      </div>
-      <div>
-        <label for="loc">מיקום (למשל A1-1)</label>
-        <input id="loc" type="text" placeholder="למשל A1-1" autocomplete="off" />
-        <div class="helper">אות גדולה + מספרים, מקף, מספרים (לדוגמה: A12-3).</div>
-      </div>
+      <label>חיפוש מק״ט</label>
       <div class="row">
-        <button id="save" class="primary">שמור / עדכן</button>
-        <button id="del" class="danger">מחיקה</button>
-        <button id="clear" class="ghost">נקה שדות</button>
+        <input id="searchSku" type="text" inputmode="numeric" pattern="\\d{4,5}" placeholder="לדוגמה: 1234" autofocus>
+        <button class="primary" id="btnSearch">חפש</button>
       </div>
-      <div class="grid">
-        <div class="search">
-          <input id="filter" type="text" placeholder="חיפוש לפי מק"ט או מיקום" style="flex:1"/>
-          <button id="export" title="ייצוא JSON" class="ghost">יצוא</button>
-          <button id="importBtn" title="ייבוא JSON" class="ghost">ייבוא</button>
-          <input id="importFile" type="file" accept="application/json" style="display:none" />
-        </div>
-        <div class="status" id="status">מוכן.</div>
-      </div>
-    </div>
+      <div id="searchResult" class="result" style="display:none"></div>
 
-    <div class="card" style="margin-top:16px">
-      <div class="row" style="justify-content:space-between">
-        <div class="badge">רשומות: <span id="count">0</span></div>
-        <button id="listAll" class="ok">רענן רשימה</button>
+      <hr style="margin:20px 0;border:none;border-top:1px solid #e2e8f0">
+
+      <div class="flex">
+        <h2 style="margin:0;font-size:18px">הוספה/עדכון</h2>
+        <span class="pill muted">נשמר מקומית בדפדפן (localStorage)</span>
       </div>
-      <table class="table" id="tbl">
-        <thead>
-          <tr><th>מק"ט</th><th>מיקום</th><th>עודכן</th></tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
+
+      <label>מק״ט (4–5 ספרות)</label>
+      <input id="formSku" type="text" inputmode="numeric" pattern="\\d{4,5}" placeholder="לדוגמה: 12345">
+      <label>מיקום (לדוגמה: A1-03 או מדף 12)</label>
+      <div class="row">
+        <input id="formLoc" type="text" placeholder="לדוגמה: A1-03">
+        <button class="ghost" id="btnAdd">הוסף חדש</button>
+        <button class="primary" id="btnUpdate">עדכן מיקום</button>
+      </div>
+      <div id="formMsg" class="result" style="display:none"></div>
+
+      <div class="list">
+        <div class="flex">
+          <h3 style="margin:0;font-size:16px">רשימת מק״טים</h3>
+          <div>
+            <button class="ghost" id="btnExport">ייצוא</button>
+            <button class="ghost" id="btnImport">ייבוא</button>
+            <button class="danger" id="btnWipe">נקה הכל</button>
+          </div>
+        </div>
+        <table id="table">
+          <thead><tr><th>מק״ט</th><th>מיקום</th><th>פעולות</th></tr></thead>
+          <tbody id="tbody"><tr><td colspan="3" class="muted">אין נתונים עדיין</td></tr></tbody>
+        </table>
+      </div>
+
+      <p class="muted" style="margin-top:12px">טיפ: סורק ברקוד שמקליד מספרים יפעל כאן ישר, רק תן ל־<span class="kbd">חיפוש מק״ט</span> פוקוס.</p>
     </div>
   </div>
 
-
 <script>
 (function(){
+  const KEY = "warehouseMiniDB"; // array of {sku, loc}
   const $ = sel => document.querySelector(sel);
-  const $$ = sel => Array.from(document.querySelectorAll(sel));
-  const skuEl = $('#sku');
-  const locEl = $('#loc');
-  const status = $('#status');
-  const tbody = $('#tbody');
-  const count = $('#count');
-  const filterEl = $('#filter');
+  const $$ = sel => document.querySelectorAll(sel);
 
-  const SKU_RE = /^\\d{4,5}$/;
-  const LOC_RE = /^[A-Z]\\d+-\\d+$/i;
+  const searchSku = $("#searchSku");
+  const btnSearch = $("#btnSearch");
+  const searchResult = $("#searchResult");
+  const formSku = $("#formSku");
+  const formLoc = $("#formLoc");
+  const btnAdd = $("#btnAdd");
+  const btnUpdate = $("#btnUpdate");
+  const formMsg = $("#formMsg");
+  const tbody = $("#tbody");
+  const btnExport = $("#btnExport");
+  const btnImport = $("#btnImport");
+  const btnWipe = $("#btnWipe");
 
-  let db;
+  const load = () => {
+    try { return JSON.parse(localStorage.getItem(KEY)) || []; }
+    catch(e){ return []; }
+  };
+  const save = (arr) => localStorage.setItem(KEY, JSON.stringify(arr));
+  const normalizeSku = (v) => (v||"").trim();
+  const validSku = (v) => /^\d{4,5}$/.test(v);
 
-  function idb(){
-    return new Promise((resolve,reject)=>{
-      const req = indexedDB.open('warehouseDB',1);
-      req.onupgradeneeded = e => {
-        const db = req.result;
-        if(!db.objectStoreNames.contains('items')){
-          const store = db.createObjectStore('items',{ keyPath:'sku' });
-          store.createIndex('location','location',{unique:false});
-          store.createIndex('updatedAt','updatedAt',{unique:false});
-        }
-      };
-      req.onsuccess = ()=> resolve(req.result);
-      req.onerror = ()=> reject(req.error);
-    });
-  }
-
-
-  async function withStore(mode, fn){
-    db = db || await idb();
-    return new Promise((resolve,reject)=>{
-      const tx = db.transaction('items', mode);
-      const st = tx.objectStore('items');
-      const res = fn(st);
-      tx.oncomplete = ()=> resolve(res);
-      tx.onerror = ()=> reject(tx.error);
-    });
-  }
-
-  function fmtDate(ts){
-    const d = new Date(ts);
-    return d.toLocaleString('he-IL',{ hour12:false });
-  }
-
-  function toast(msg){ status.textContent = msg; }
-
-  async function save(){
-    const sku = skuEl.value.trim();
-    const location = locEl.value.trim().toUpperCase();
- //   if(!SKU_RE.test(sku)) return toast('שגיאה: מק"\ט חייב להיות 4–5 ספרות.');
-    if(!LOC_RE.test(location)) return toast('שגיאה: מיקום בפורמט A1-1.');
-    const item = { sku, location, updatedAt: Date.now() };
-    await withStore('readwrite', st => st.put(item));
-    toast('נשמר בהצלחה.');
-    await listAll();
-  }
-
-  async function del(){
-    const sku = skuEl.value.trim();
-    if(!SKU_RE.test(sku)) return toast('הכנס מק"\ט למחיקה (4–5 ספרות).');
-    await withStore('readwrite', st => st.delete(sku));
-    toast('נמחק (אם היה קיים).');
-    await listAll();
-  }
-
-  async function find(){
-    const sku = skuEl.value.trim();
-    if(!SKU_RE.test(sku)) return toast('חיפוש: מק"\ט לא תקין.');
-    const item = await withStore('readonly', st => new Promise(res=>{
-      const req = st.get(sku); req.onsuccess = ()=> res(req.result||null);
-    }));
-    if(item){
-      locEl.value = item.location;
-      toast('נמצא. עודכן בשדה המיקום.');
-      highlightRow(item.sku);
-    } else {
-      toast('לא נמצא רשומה עבור המק"\ט הזה.');
+  function render(){
+    const data = load().sort((a,b)=>a.sku.localeCompare(b.sku));
+    tbody.innerHTML = "";
+    if(!data.length){
+      const tr = document.createElement("tr");
+      const td = document.createElement("td");
+      td.colSpan = 3;
+      td.textContent = "אין נתונים עדיין";
+      td.className = "muted";
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+      return;
     }
-  }
-
-  function highlightRow(sku){
-    $$('#tbody tr').forEach(tr=> tr.style.outline='');
-    const row = document.querySelector(`tr[data-sku=\"${sku}\"]`);
-    if(row){ row.style.outline = '2px solid var(--accent)'; row.scrollIntoView({behavior:'smooth',block:'center'}); }
-  }
-
-  async function listAll(){
-    const items = await withStore('readonly', st => new Promise(res=>{
-      const arr=[]; const req = st.openCursor();
-      req.onsuccess = e => {
-        const c = e.target.result; if(c){ arr.push(c.value); c.continue(); } else res(arr); };
-    }));
-    render(items);
-  }
-
-  function render(items){
-    const q = filterEl.value.trim().toUpperCase();
-    const filtered = items.filter(it => !q || it.sku.includes(q) || it.location.toUpperCase().includes(q));
-    tbody.innerHTML = '';
-    filtered.sort((a,b)=> a.sku.localeCompare(b.sku));
-    for(const it of filtered){
-      const tr = document.createElement('tr');
-      tr.dataset.sku = it.sku;
-      tr.innerHTML = `<td><span class=\"pill\">${it.sku}</span></td><td>${it.location}</td><td>${fmtDate(it.updatedAt)}</td>`;
-      tr.addEventListener('click', ()=>{ skuEl.value = it.sku; locEl.value = it.location; });
+    for(const row of data){
+      const tr = document.createElement("tr");
+      const tdSku = document.createElement("td");
+      const tdLoc = document.createElement("td");
+      const tdAct = document.createElement("td");
+      tdSku.textContent = row.sku;
+      tdLoc.textContent = row.loc;
+      const copyBtn = document.createElement("button");
+      copyBtn.textContent = "העתק";
+      copyBtn.className = "ghost";
+      copyBtn.onclick = async ()=> {
+        await navigator.clipboard.writeText(row.loc);
+        toast(`הועתק: ${row.loc}`);
+      };
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "מחק";
+      delBtn.className = "danger";
+      delBtn.onclick = ()=> {
+        const arr = load().filter(x=>x.sku!==row.sku);
+        save(arr); render(); toast("נמחק");
+      };
+      tdAct.append(copyBtn, " ", delBtn);
+      tr.append(tdSku, tdLoc, tdAct);
       tbody.appendChild(tr);
     }
-    count.textContent = filtered.length;
   }
 
-  async function exportJSON(){
-    const items = await withStore('readonly', st => new Promise(res=>{
-      const arr=[]; const req = st.openCursor();
-      req.onsuccess = e => { const c=e.target.result; if(c){arr.push(c.value); c.continue();} else res(arr); };
-    }));
-    const blob = new Blob([JSON.stringify({ exportedAt: Date.now(), items }, null, 2)], {type:'application/json'});
+  function toast(msg){
+    formMsg.style.display = "block";
+    formMsg.textContent = msg;
+    setTimeout(()=>{ formMsg.style.display = "none"; }, 1500);
+  }
+
+  function doSearch(){
+    const sku = normalizeSku(searchSku.value);
+    if(!validSku(sku)){
+      searchResult.style.display = "block";
+      searchResult.textContent = "מק״ט לא תקין — צריך 4–5 ספרות.";
+      return;
+    }
+    const hit = load().find(x=>x.sku===sku);
+    searchResult.style.display = "block";
+    searchResult.textContent = hit ? `המיקום של ${sku}: ${hit.loc}` : `לא נמצא מק״ט ${sku}.`;
+  }
+
+  function addNew(){
+    const sku = normalizeSku(formSku.value);
+    const loc = (formLoc.value||"").trim();
+    if(!validSku(sku)) return toast("מק״ט לא תקין (4–5 ספרות).");
+    if(!loc) return toast("צריך למלא מיקום.");
+    const arr = load();
+    if(arr.some(x=>x.sku===sku)) return toast("קיים כבר מק״ט כזה. השתמש בעדכון.");
+    arr.push({sku, loc});
+    save(arr); render(); toast("נוסף בהצלחה.");
+  }
+
+  function updateLoc(){
+    const sku = normalizeSku(formSku.value);
+    const loc = (formLoc.value||"").trim();
+    if(!validSku(sku)) return toast("מק״ט לא תקין (4–5 ספרות).");
+    if(!loc) return toast("צריך למלא מיקום.");
+    const arr = load();
+    const idx = arr.findIndex(x=>x.sku===sku);
+    if(idx<0) return toast("לא קיים מק״ט כזה. הוסף חדש.");
+    arr[idx].loc = loc;
+    save(arr); render(); toast("עודכן בהצלחה.");
+  }
+
+  btnSearch.addEventListener("click", doSearch);
+  searchSku.addEventListener("keydown", (e)=>{ if(e.key==="Enter"){ e.preventDefault(); doSearch(); } });
+
+  btnAdd.addEventListener("click", (e)=>{ e.preventDefault(); addNew(); });
+  btnUpdate.addEventListener("click", (e)=>{ e.preventDefault(); updateLoc(); });
+
+  btnExport.addEventListener("click", ()=>{
+    const data = load();
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
     const url = URL.createObjectURL(blob);
-    const a = Object.assign(document.createElement('a'), { href:url, download:`warehouse_backup_${new Date().toISOString().slice(0,10)}.json` });
-    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    toast('קובץ ייצוא הורד. שמור אותו ב‏‑Files או ב‏‑iCloud.');
-  }
-
-  function importJSON(){ $('#importFile').click(); }
-
-  $('#importFile').addEventListener('change', async (e)=>{
-    const file = e.target.files[0]; if(!file) return;
-    try{
-      const text = await file.text();
-      const data = JSON.parse(text);
-      const items = Array.isArray(data) ? data : (data.items||[]);
-      let ok=0, bad=0;
-      await withStore('readwrite', st => {
-        return Promise.all(items.map(obj=> new Promise(resolve=>{
-          if(!obj || !SKU_RE.test(String(obj.sku)) || !LOC_RE.test(String(obj.location))) { bad++; return resolve(); }
-          const rec = { sku:String(obj.sku), location:String(obj.location).toUpperCase(), updatedAt: obj.updatedAt || Date.now() };
-          const r = st.put(rec); r.onsuccess = ()=>{ ok++; resolve(); }; r.onerror = ()=>resolve();
-        })));
-      });
-      toast(`ייבוא הושלם: ${ok} נוספו/ עודכנו, ${bad} דילגתי.`);
-      await listAll();
-    }catch(err){ toast('שגיאה בייבוא: '+err.message); }
-    e.target.value='';
+    const a = document.createElement("a");
+    a.href = url; a.download = "warehouse-mini.json"; a.click();
+    URL.revokeObjectURL(url);
   });
 
-  $('#save').addEventListener('click', save);
-  $('#del').addEventListener('click', del);
-  $('#clear').addEventListener('click', ()=>{ skuEl.value=''; locEl.value=''; skuEl.focus(); });
-  $('#listAll').addEventListener('click', listAll);
-  $('#export').addEventListener('click', exportJSON);
-  $('#importBtn').addEventListener('click', importJSON);
-  skuEl.addEventListener('keydown', e=>{ if(e.key==='Enter') find(); });
-  locEl.addEventListener('keydown', e=>{ if(e.key==='Enter') save(); });
-  filterEl.addEventListener('input', listAll);
+  btnImport.addEventListener("click", ()=>{
+    const inp = document.createElement("input");
+    inp.type = "file"; inp.accept = "application/json";
+    inp.onchange = ()=> {
+      const file = inp.files[0];
+      if(!file) return;
+      const fr = new FileReader();
+      fr.onload = ()=> {
+        try{
+          const data = JSON.parse(fr.result);
+          if(!Array.isArray(data)) throw new Error("פורמט לא תקין");
+          // keep only valid rows
+          const clean = [];
+          for(const r of data){
+            if(r && typeof r.sku==="string" && typeof r.loc==="string" && validSku(r.sku) && r.loc.trim()){
+              clean.push({sku:r.sku.trim(), loc:r.loc.trim()});
+            }
+          }
+          save(clean); render(); toast("ייבוא הושלם.");
+        }catch(e){ toast("שגיאה בייבוא."); }
+      };
+      fr.readAsText(file);
+    };
+    inp.click();
+  });
 
-  idb().then(()=>{ listAll(); });
+  btnWipe.addEventListener("click", ()=>{
+    if(confirm("למחוק את כל הנתונים המקומיים?")){
+      save([]); render(); toast("נוקה.");
+    }
+  });
+
+  // Optional seed with query ?seed=1 for demo
+  const params = new URLSearchParams(location.search);
+  if(params.get("seed")==="1" && load().length===0){
+    save([{sku:"1234",loc:"A1-03"},{sku:"5678",loc:"B2-11"}]);
+  }
+
+  render();
 })();
 </script>
 </body>
