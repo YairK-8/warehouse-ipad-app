@@ -7,7 +7,7 @@
   <style>
     :root{--bg:#f7f7fb;--card:#fff;--accent:#2563eb;--text:#0f172a}
     *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:var(--bg); color:var(--text)}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:var(--bg);color:var(--text)}
     .wrap{max-width:680px;margin:40px auto;padding:16px}
     .card{background:var(--card);border-radius:18px;box-shadow:0 10px 25px rgba(0,0,0,.06);padding:20px}
     h1{font-size:22px;margin:0 0 12px}
@@ -15,7 +15,7 @@
     label{display:block;margin:10px 0 6px}
     input,button{font:inherit}
     input[type=text]{width:100%;padding:12px 14px;border:1px solid #e2e8f0;border-radius:12px;outline:none}
-    input[type=text]:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+    input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
     .row{display:flex;gap:10px;flex-wrap:wrap}
     .row > *{flex:1}
     button{padding:12px 14px;border:none;border-radius:12px;cursor:pointer}
@@ -24,13 +24,28 @@
     .danger{background:#ef4444;color:#fff}
     .muted{color:#64748b}
     .result{margin-top:14px;padding:12px 14px;background:#ecfeff;border:1px solid #bae6fd;border-radius:12px}
-    .list{margin-top:20px}
     table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden}
     th,td{padding:10px 12px;border-bottom:1px solid #e2e8f0;text-align:right}
     th{background:#eef2ff}
-    .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;background:#e2e8f0;padding:2px 6px;border-radius:6px}
+    .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#e2e8f0;padding:2px 6px;border-radius:6px}
     .flex{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
     .pill{display:inline-block;padding:4px 10px;background:#f1f5f9;border-radius:999px;font-size:12px}
+    .clickable-row{cursor:pointer}
+    .count{font-size:12px}
+
+    /* --- אזור חיפוש דומיננטי --- */
+    .hero{background:linear-gradient(180deg,#eef2ff, #ffffff);border:1px solid #dbeafe;padding:18px;border-radius:16px;box-shadow:0 8px 20px rgba(37,99,235,.10)}
+    .hero .row input[type=text]{font-size:22px;padding:18px 16px}
+    .hero .row button{font-size:18px;padding:18px 16px}
+    .hero .result{font-size:18px}
+
+    /* אזור רשימה מתקפל */
+    details.list{border:1px solid #e2e8f0;border-radius:12px;background:#fff;margin-top:20px}
+    details.list summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;background:#eef2ff;border-radius:12px}
+    details.list summary::-webkit-details-marker{display:none}
+    details .chev{transition:transform .2s}
+    details[open] .chev{transform:rotate(180deg)}
+    .details-body{padding:12px 14px}
   </style>
 </head>
 <body>
@@ -39,12 +54,15 @@
       <h1>מחסן מינימלי</h1>
       <p class="note">מקלידים מק״ט (4–5 ספרות) ➜ מקבלים את המיקום. אפשר להוסיף/לעדכן.</p>
 
-      <label>חיפוש מק״ט</label>
-      <div class="row">
-        <input id="searchSku" type="text" inputmode="numeric" pattern="\\d{4,5}" placeholder="לדוגמה: 1234" autofocus>
-        <button class="primary" id="btnSearch">חפש</button>
+      <!-- חיפוש — גדול ודומיננטי -->
+      <div class="hero">
+        <label>חיפוש מק״ט</label>
+        <div class="row">
+          <input id="searchSku" type="text" inputmode="numeric" pattern="\d{4,5}" placeholder="לדוגמה: 1234" autofocus>
+          <button class="primary" id="btnSearch">חפש</button>
+        </div>
+        <div id="searchResult" class="result" style="display:none"></div>
       </div>
-      <div id="searchResult" class="result" style="display:none"></div>
 
       <hr style="margin:20px 0;border:none;border-top:1px solid #e2e8f0">
 
@@ -54,7 +72,7 @@
       </div>
 
       <label>מק״ט (4–5 ספרות)</label>
-      <input id="formSku" type="text" inputmode="numeric" pattern="\\d{4,5}" placeholder="לדוגמה: 12345">
+      <input id="formSku" type="text" inputmode="numeric" pattern="\d{4,5}" placeholder="לדוגמה: 12345">
       <label>מיקום (לדוגמה: A1-03 או מדף 12)</label>
       <div class="row">
         <input id="formLoc" type="text" placeholder="לדוגמה: A1-03">
@@ -63,20 +81,30 @@
       </div>
       <div id="formMsg" class="result" style="display:none"></div>
 
-      <div class="list">
-        <div class="flex">
-          <h3 style="margin:0;font-size:16px">רשימת מק״טים</h3>
-          <div>
-            <button class="ghost" id="btnExport">ייצוא</button>
-            <button class="ghost" id="btnImport">ייבוא</button>
-            <button class="danger" id="btnWipe">נקה הכל</button>
+      <!-- רשימה מתקפלת -->
+      <details id="listDetails" class="list" open>
+        <summary>
+          <h3 style="margin:0;font-size:16px">
+            רשימת מק״טים <span id="count" class="count muted"></span>
+          </h3>
+          <span class="chev">⌃</span>
+        </summary>
+
+        <div class="details-body">
+          <div class="flex" style="margin-bottom:10px">
+            <div style="margin-inline-start:auto">
+              <button class="ghost" id="btnExport">ייצוא</button>
+              <button class="ghost" id="btnImport">ייבוא</button>
+              <button class="danger" id="btnWipe">נקה הכל</button>
+            </div>
           </div>
+
+          <table id="table">
+            <thead><tr><th>מק״ט</th><th>מיקום</th><th>פעולות</th></tr></thead>
+            <tbody id="tbody"><tr><td colspan="3" class="muted">אין נתונים עדיין</td></tr></tbody>
+          </table>
         </div>
-        <table id="table">
-          <thead><tr><th>מק״ט</th><th>מיקום</th><th>פעולות</th></tr></thead>
-          <tbody id="tbody"><tr><td colspan="3" class="muted">אין נתונים עדיין</td></tr></tbody>
-        </table>
-      </div>
+      </details>
 
       <p class="muted" style="margin-top:12px">טיפ: סורק ברקוד שמקליד מספרים יפעל כאן ישר, רק תן ל־<span class="kbd">חיפוש מק״ט</span> פוקוס.</p>
     </div>
@@ -86,7 +114,6 @@
 (function(){
   const KEY = "warehouseMiniDB"; // array of {sku, loc}
   const $ = sel => document.querySelector(sel);
-  const $$ = sel => document.querySelectorAll(sel);
 
   const searchSku = $("#searchSku");
   const btnSearch = $("#btnSearch");
@@ -100,6 +127,7 @@
   const btnExport = $("#btnExport");
   const btnImport = $("#btnImport");
   const btnWipe = $("#btnWipe");
+  const countEl = $("#count");
 
   const load = () => {
     try { return JSON.parse(localStorage.getItem(KEY)) || []; }
@@ -109,9 +137,20 @@
   const normalizeSku = (v) => (v||"").trim();
   const validSku = (v) => /^\d{4,5}$/.test(v);
 
+  // קלט ספרות בלבד עד 5 תווים
+  function enforceDigits(el){
+    el.addEventListener("input", ()=>{
+      const digits = el.value.replace(/\D/g,"").slice(0,5);
+      if(el.value !== digits) el.value = digits;
+    });
+  }
+  enforceDigits(searchSku);
+  enforceDigits(formSku);
+
   function render(){
-    const data = load().sort((a,b)=>a.sku.localeCompare(b.sku));
+    const data = load().sort((a,b)=>a.sku.localeCompare(b.sku,'he'));
     tbody.innerHTML = "";
+    countEl.textContent = data.length ? `(${data.length})` : "";
     if(!data.length){
       const tr = document.createElement("tr");
       const td = document.createElement("td");
@@ -124,25 +163,37 @@
     }
     for(const row of data){
       const tr = document.createElement("tr");
+      tr.className = "clickable-row";
       const tdSku = document.createElement("td");
       const tdLoc = document.createElement("td");
       const tdAct = document.createElement("td");
       tdSku.textContent = row.sku;
       tdLoc.textContent = row.loc;
+
       const copyBtn = document.createElement("button");
       copyBtn.textContent = "העתק";
       copyBtn.className = "ghost";
-      copyBtn.onclick = async ()=> {
+      copyBtn.onclick = async (e)=> {
+        e.stopPropagation();
         await navigator.clipboard.writeText(row.loc);
         toast(`הועתק: ${row.loc}`);
       };
+
       const delBtn = document.createElement("button");
       delBtn.textContent = "מחק";
       delBtn.className = "danger";
-      delBtn.onclick = ()=> {
+      delBtn.onclick = (e)=> {
+        e.stopPropagation();
         const arr = load().filter(x=>x.sku!==row.sku);
         save(arr); render(); toast("נמחק");
       };
+
+      tr.onclick = ()=>{
+        formSku.value = row.sku;
+        formLoc.value = row.loc;
+        formLoc.focus();
+      };
+
       tdAct.append(copyBtn, " ", delBtn);
       tr.append(tdSku, tdLoc, tdAct);
       tbody.appendChild(tr);
@@ -152,7 +203,8 @@
   function toast(msg){
     formMsg.style.display = "block";
     formMsg.textContent = msg;
-    setTimeout(()=>{ formMsg.style.display = "none"; }, 1500);
+    clearTimeout(toast._t);
+    toast._t = setTimeout(()=>{ formMsg.style.display = "none"; }, 1600);
   }
 
   function doSearch(){
@@ -196,8 +248,12 @@
   btnAdd.addEventListener("click", (e)=>{ e.preventDefault(); addNew(); });
   btnUpdate.addEventListener("click", (e)=>{ e.preventDefault(); updateLoc(); });
 
+  formLoc.addEventListener("keydown", (e)=>{
+    if(e.key==="Enter"){ e.preventDefault(); updateLoc(); }
+  });
+
   btnExport.addEventListener("click", ()=>{
-    const data = load();
+    const data = load().sort((a,b)=>a.sku.localeCompare(b.sku,'he'));
     const blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -208,15 +264,14 @@
   btnImport.addEventListener("click", ()=>{
     const inp = document.createElement("input");
     inp.type = "file"; inp.accept = "application/json";
-    inp.onchange = ()=> {
+    inp.onchange = ()=>{
       const file = inp.files[0];
       if(!file) return;
       const fr = new FileReader();
-      fr.onload = ()=> {
+      fr.onload = ()=>{
         try{
           const data = JSON.parse(fr.result);
           if(!Array.isArray(data)) throw new Error("פורמט לא תקין");
-          // keep only valid rows
           const clean = [];
           for(const r of data){
             if(r && typeof r.sku==="string" && typeof r.loc==="string" && validSku(r.sku) && r.loc.trim()){
@@ -231,13 +286,19 @@
     inp.click();
   });
 
+  // מחיקה מלאה — רק עם קוד 6165
   btnWipe.addEventListener("click", ()=>{
-    if(confirm("למחוק את כל הנתונים המקומיים?")){
-      save([]); render(); toast("נוקה.");
+    const code = prompt("להמשך מחיקה הזן/ני קוד:");
+    if(code !== "6165"){ toast("קוד מחיקה שגוי."); return; }
+    if(!confirm("אישור סופי: למחוק את כל הנתונים המקומיים?")){
+      toast("בוטל.");
+      return;
     }
+    save([]); render(); toast("נוקה.");
   });
 
-  // Optional seed with query ?seed=1 for demo
+  window.addEventListener("load", ()=> setTimeout(()=> searchSku.focus(), 100));
+
   const params = new URLSearchParams(location.search);
   if(params.get("seed")==="1" && load().length===0){
     save([{sku:"1234",loc:"A1-03"},{sku:"5678",loc:"B2-11"}]);
