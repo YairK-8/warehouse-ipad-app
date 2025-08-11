@@ -34,22 +34,15 @@
     .count{font-size:12px}
     .status{font-size:12px;color:#64748b;margin-top:8px}
 
-    /* חיפוש דומיננטי */
-    .hero{background:linear-gradient(180deg,#eef2ff, #ffffff);border:1px solid #dbeafe;padding:18px;border-radius:16px;box-shadow:0 8px 20px rgba(37,99,235,.10)}
+    .hero{background:linear-gradient(180deg,#eef2ff,#ffffff);border:1px solid #dbeafe;padding:18px;border-radius:16px;box-shadow:0 8px 20px rgba(37,99,235,.10)}
     .hero .row input[type=text]{font-size:22px;padding:18px 16px}
     .hero .row button{font-size:18px;padding:18px 16px}
 
-    /* תצוגת תוצאה גדולה */
-    .bigCard{
-      display:flex; align-items:center; justify-content:space-between; gap:12px;
-      padding:16px; border:1px solid #bfdbfe; border-radius:14px;
-      background:#e0f2fe;
-    }
-    .bigCard .skuLine{font-size:13px; color:#334155; margin-bottom:4px}
-    .bigCard .locBig{font-size:34px; font-weight:800; letter-spacing:.3px}
+    .bigCard{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px;border:1px solid #bfdbfe;border-radius:14px;background:#e0f2fe}
+    .bigCard .skuLine{font-size:13px;color:#334155;margin-bottom:4px}
+    .bigCard .locBig{font-size:34px;font-weight:800;letter-spacing:.3px}
     .bigCard .actions button{padding:10px 12px}
 
-    /* מתקפל */
     details.list{border:1px solid #e2e8f0;border-radius:12px;background:#fff;margin-top:20px}
     details.list summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;background:#eef2ff;border-radius:12px}
     details.list summary::-webkit-details-marker{display:none}
@@ -57,7 +50,7 @@
     details[open] .chev{transform:rotate(180deg)}
     .details-body{padding:12px 14px}
 
-    .cloud{margin-top:16px; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:12px}
+    .cloud{margin-top:16px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px}
     .cloud .hint{font-size:12px;color:#64748b}
   </style>
 </head>
@@ -65,9 +58,8 @@
   <div class="wrap">
     <div class="card">
       <h1>מחסן מינימלי</h1>
-      <p class="note">ממשק יחיד: מדביקים למטה את כתובת ה־Web App (Apps Script). הקריאה והעדכון באותו קישור.</p>
+      <p class="note">מחובר ל־Web App של Apps Script. אפשר לשנות את הכתובת למטה אם צריך.</p>
 
-      <!-- חיפוש -->
       <div class="hero">
         <label>חיפוש מק״ט</label>
         <div class="row">
@@ -95,7 +87,6 @@
       </div>
       <div id="formMsg" class="result" style="display:none"></div>
 
-      <!-- רשימה מתקפלת -->
       <details id="listDetails" class="list" open>
         <summary>
           <h3 style="margin:0;font-size:16px">
@@ -103,7 +94,6 @@
           </h3>
           <span class="chev">⌃</span>
         </summary>
-
         <div class="details-body">
           <table id="table">
             <thead><tr><th>מק״ט</th><th>מיקום</th><th>פעולות</th></tr></thead>
@@ -112,17 +102,16 @@
         </div>
       </details>
 
-      <!-- אזור הגדרות (קישור יחיד) -->
       <div class="cloud">
-        <label>קישור Web App (Apps Script — ממשק יחיד)</label>
-        <input id="apiUrl" type="url" placeholder="למשל: https://script.google.com/macros/s/AKfycb.../exec">
+        <label>קישור Web App</label>
+        <input id="apiUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec">
         <div class="row" style="margin-top:10px">
-          <button class="primary" id="btnSaveCloud">שמור קישור</button>
-          <button class="ghost" id="btnReload">טען מהענן</button>
+          <button class="primary" id="btnSaveCloud">Сохранить ссылку</button>
+          <button class="ghost" id="btnReload">Загрузить из облака</button>
           <button class="danger" id="btnWipe">נקה הכל (6165)</button>
         </div>
         <div class="hint" style="margin-top:6px">
-          ה־API תומך ב־GET: <code>?action=list</code> | <code>?action=upsert&sku=1234&loc=A1-03</code> |
+          API (GET): <code>?action=list</code> | <code>?action=upsert&sku=1234&loc=A1-03</code> |
           <code>?action=delete&sku=1234</code> | <code>?action=wipe&code=6165</code>
         </div>
       </div>
@@ -133,21 +122,20 @@
 
 <script>
 (function(){
+  const DEFAULT_API = "https://script.google.com/macros/s/AKfycbxWbM_GBviksh_xtXua5vj9G9q98IcGgGGyKN4lw3ARB3FTA0Aj4hRMCFJx8I4ngQgf/exec";
+
   const $ = s => document.querySelector(s);
 
-  // אלמנטים
   const searchSku = $("#searchSku"), btnSearch = $("#btnSearch"), searchResult = $("#searchResult");
   const formSku = $("#formSku"), formLoc = $("#formLoc"), btnAdd = $("#btnAdd"), btnUpdate = $("#btnUpdate"), formMsg = $("#formMsg");
   const tbody = $("#tbody"), countEl = $("#count"), cloudStatus = $("#cloudStatus");
   const apiUrlEl = $("#apiUrl"), btnSaveCloud = $("#btnSaveCloud"), btnReload = $("#btnReload"), btnWipe = $("#btnWipe");
 
-  // תצורה מקומית
   const CFG_KEY = "findloc_api_url";
-  function loadApi(){ return localStorage.getItem(CFG_KEY)||""; }
-  function saveApi(url){ localStorage.setItem(CFG_KEY, url||""); }
+  function loadApi(){ return localStorage.getItem(CFG_KEY)||DEFAULT_API; }
+  function saveApi(url){ localStorage.setItem(CFG_KEY, url||DEFAULT_API); }
   let API = loadApi(); apiUrlEl.value = API;
 
-  // עוזרים
   const validSku = v => /^\d{4,5}$/.test(v||"");
   function enforceDigits(el){
     el.addEventListener("input", ()=>{
@@ -166,7 +154,7 @@
   let cache = new Map(); // sku -> loc
 
   function withApi(action, params={}){
-    if(!API){ throw new Error("לא הוגדר קישור Web App"); }
+    if(!API) throw new Error("לא הוגדר קישור Web App");
     const url = new URL(API);
     url.searchParams.set("action", action);
     for(const [k,v] of Object.entries(params)){ url.searchParams.set(k, v); }
@@ -174,14 +162,15 @@
   }
 
   async function fetchList(){
-    if(!API){ cloudStatus.textContent = "הדבק קישור Web App ולחץ 'שמור'."; return; }
     cloudStatus.textContent = "טוען מהענן…";
     try{
       const data = await withApi("list");
       if(!Array.isArray(data)) throw new Error("תגובה לא תקינה");
       cache.clear();
       for(const r of data){
-        if(r && validSku(r.sku) && r.loc) cache.set(String(r.sku).trim(), String(r.loc).trim());
+        if(r && validSku(r.sku) && r.loc && String(r.loc).toLowerCase()!=='nan'){
+          cache.set(String(r.sku).trim(), String(r.loc).trim());
+        }
       }
       render();
       cloudStatus.textContent = `נטען: ${cache.size} פריטים.`;
@@ -272,26 +261,19 @@
     cache.clear(); render(); toast("נוקה.");
   }
 
-  // אירועים
   btnSearch.addEventListener("click", doSearch);
   searchSku.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); doSearch(); } });
-  btnAdd.addEventListener("click", e=>{ e.preventDefault(); addNew(); });
-  btnUpdate.addEventListener("click", e=>{ e.preventDefault(); updateLoc(); });
+  btnAdd.addEventListener("click", e=>{ e.preventDefault(); addNew(); } );
+  btnUpdate.addEventListener("click", e=>{ e.preventDefault(); updateLoc(); } );
   formLoc.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); updateLoc(); } });
 
-  btnSaveCloud.addEventListener("click", ()=>{
-    API = (apiUrlEl.value||"").trim();
-    saveApi(API);
-    toast("הקישור נשמר.");
-  });
+  btnSaveCloud.addEventListener("click", ()=>{ API = (apiUrlEl.value||"").trim(); saveApi(API); toast("הקישור נשמר."); });
   btnReload.addEventListener("click", fetchList);
   btnWipe.addEventListener("click", wipeAll);
 
-  // התחלה
   window.addEventListener("load", ()=>{
     setTimeout(()=> searchSku.focus(), 120);
-    if(API) fetchList();
-    else cloudStatus.textContent = "הדבק קישור Web App ולחץ 'שמור'.";
+    fetchList(); // נטען מיידית מה־DEFAULT_API
   });
 })();
 </script>
