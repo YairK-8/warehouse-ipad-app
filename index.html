@@ -57,7 +57,6 @@
     details[open] .chev{transform:rotate(180deg)}
     .details-body{padding:12px 14px}
 
-    /* אזור הגדרות ענן (ממשק יחיד) */
     .cloud{margin-top:16px; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:12px}
     .cloud .hint{font-size:12px;color:#64748b}
   </style>
@@ -65,8 +64,8 @@
 <body>
   <div class="wrap">
     <div class="card">
-      <h1>EzSearch</h1>
-      <p class="note">ממשק יחיד: הדבק למטה את כתובת ה־Web App (Apps Script). הקריאה והעדכון משתמשים באותו קישור.</p>
+      <h1>מחסן מינימלי</h1>
+      <p class="note">ממשק יחיד: מדביקים למטה את כתובת ה־Web App (Apps Script). הקריאה והעדכון באותו קישור.</p>
 
       <!-- חיפוש -->
       <div class="hero">
@@ -120,10 +119,10 @@
         <div class="row" style="margin-top:10px">
           <button class="primary" id="btnSaveCloud">שמור קישור</button>
           <button class="ghost" id="btnReload">טען מהענן</button>
-          <button class="danger" id="btnWipe">נקה הכל </button>
+          <button class="danger" id="btnWipe">נקה הכל (6165)</button>
         </div>
         <div class="hint" style="margin-top:6px">
-          ה־API תומך בקריאות GET: <code>?action=list</code> | <code>?action=upsert&sku=1234&loc=A1-03</code> |
+          ה־API תומך ב־GET: <code>?action=list</code> | <code>?action=upsert&sku=1234&loc=A1-03</code> |
           <code>?action=delete&sku=1234</code> | <code>?action=wipe&code=6165</code>
         </div>
       </div>
@@ -171,7 +170,6 @@
     const url = new URL(API);
     url.searchParams.set("action", action);
     for(const [k,v] of Object.entries(params)){ url.searchParams.set(k, v); }
-    // GET בלבד — נמנע מ-CORS/Preflight
     return fetch(url.toString(), {cache:"no-store"}).then(r=>r.json());
   }
 
@@ -235,7 +233,7 @@
         <div class="actions"><button class="ghost" id="btnCopyLoc">העתק</button></div>
       </div>`;
     const copyBtn = document.getElementById("btnCopyLoc");
-    if(copyBtn){ copyBtn.onclick = async ()=>{ await navigator.clipboard.writeText(loc); toast(`הועתק: ${loc}`); }; }
+    if(copyBtn){ copyBtn.onclick = async ()=>{ await navigator.clipboard.writeText(loc); toast(\`הועתק: ${loc}\`); }; }
   }
 
   function doSearch(){
