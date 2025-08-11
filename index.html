@@ -2,20 +2,20 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8">
-  <title>FindLoc — חיפוש מק״ט למיקום</title>
+  <title>FindLoc — חיפוש מק״ט למיקום (ממשק יחיד)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     :root{--bg:#f7f7fb;--card:#fff;--accent:#2563eb;--text:#0f172a}
     *{box-sizing:border-box}
     body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:var(--bg);color:var(--text)}
-    .wrap{max-width:680px;margin:40px auto;padding:16px}
+    .wrap{max-width:760px;margin:40px auto;padding:16px}
     .card{background:var(--card);border-radius:18px;box-shadow:0 10px 25px rgba(0,0,0,.06);padding:20px}
     h1{font-size:22px;margin:0 0 12px}
     p.note{margin:0 0 16px;color:#475569}
     label{display:block;margin:10px 0 6px}
     input,button{font:inherit}
-    input[type=text]{width:100%;padding:12px 14px;border:1px solid #e2e8f0;border-radius:12px;outline:none}
-    input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+    input[type=text], input[type=url]{width:100%;padding:12px 14px;border:1px solid #e2e8f0;border-radius:12px;outline:none}
+    input[type=text]:focus, input[type=url]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
     .row{display:flex;gap:10px;flex-wrap:wrap}
     .row > *{flex:1}
     button{padding:12px 14px;border:none;border-radius:12px;cursor:pointer}
@@ -32,29 +32,43 @@
     .pill{display:inline-block;padding:4px 10px;background:#f1f5f9;border-radius:999px;font-size:12px}
     .clickable-row{cursor:pointer}
     .count{font-size:12px}
+    .status{font-size:12px;color:#64748b;margin-top:8px}
 
-    /* --- אזור חיפוש דומיננטי --- */
+    /* חיפוש דומיננטי */
     .hero{background:linear-gradient(180deg,#eef2ff, #ffffff);border:1px solid #dbeafe;padding:18px;border-radius:16px;box-shadow:0 8px 20px rgba(37,99,235,.10)}
     .hero .row input[type=text]{font-size:22px;padding:18px 16px}
     .hero .row button{font-size:18px;padding:18px 16px}
-    .hero .result{font-size:18px}
 
-    /* אזור רשימה מתקפל */
+    /* תצוגת תוצאה גדולה */
+    .bigCard{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:16px; border:1px solid #bfdbfe; border-radius:14px;
+      background:#e0f2fe;
+    }
+    .bigCard .skuLine{font-size:13px; color:#334155; margin-bottom:4px}
+    .bigCard .locBig{font-size:34px; font-weight:800; letter-spacing:.3px}
+    .bigCard .actions button{padding:10px 12px}
+
+    /* מתקפל */
     details.list{border:1px solid #e2e8f0;border-radius:12px;background:#fff;margin-top:20px}
     details.list summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;background:#eef2ff;border-radius:12px}
     details.list summary::-webkit-details-marker{display:none}
     details .chev{transition:transform .2s}
     details[open] .chev{transform:rotate(180deg)}
     .details-body{padding:12px 14px}
+
+    /* אזור הגדרות ענן (ממשק יחיד) */
+    .cloud{margin-top:16px; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:12px}
+    .cloud .hint{font-size:12px;color:#64748b}
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
       <h1>מחסן מינימלי</h1>
-      <p class="note">מקלידים מק״ט (4–5 ספרות) ➜ מקבלים את המיקום. אפשר להוסיף/לעדכן.</p>
+      <p class="note">ממשק יחיד: הדבק למטה את כתובת ה־Web App (Apps Script). הקריאה והעדכון משתמשים באותו קישור.</p>
 
-      <!-- חיפוש — גדול ודומיננטי -->
+      <!-- חיפוש -->
       <div class="hero">
         <label>חיפוש מק״ט</label>
         <div class="row">
@@ -62,13 +76,14 @@
           <button class="primary" id="btnSearch">חפש</button>
         </div>
         <div id="searchResult" class="result" style="display:none"></div>
+        <div id="cloudStatus" class="status"></div>
       </div>
 
       <hr style="margin:20px 0;border:none;border-top:1px solid #e2e8f0">
 
       <div class="flex">
         <h2 style="margin:0;font-size:18px">הוספה/עדכון</h2>
-        <span class="pill muted">נשמר מקומית בדפדפן (localStorage)</span>
+        <span class="pill muted">סנכרון דרך Web App</span>
       </div>
 
       <label>מק״ט (4–5 ספרות)</label>
@@ -91,20 +106,27 @@
         </summary>
 
         <div class="details-body">
-          <div class="flex" style="margin-bottom:10px">
-            <div style="margin-inline-start:auto">
-              <button class="ghost" id="btnExport">ייצוא</button>
-              <button class="ghost" id="btnImport">ייבוא</button>
-              <button class="danger" id="btnWipe">נקה הכל</button>
-            </div>
-          </div>
-
           <table id="table">
             <thead><tr><th>מק״ט</th><th>מיקום</th><th>פעולות</th></tr></thead>
-            <tbody id="tbody"><tr><td colspan="3" class="muted">אין נתונים עדיין</td></tr></tbody>
+            <tbody id="tbody"><tr><td colspan="3" class="muted">טוען…</td></tr></tbody>
           </table>
         </div>
       </details>
+
+      <!-- אזור הגדרות (קישור יחיד) -->
+      <div class="cloud">
+        <label>קישור Web App (Apps Script — ממשק יחיד)</label>
+        <input id="apiUrl" type="url" placeholder="למשל: https://script.google.com/macros/s/AKfycb.../exec">
+        <div class="row" style="margin-top:10px">
+          <button class="primary" id="btnSaveCloud">שמור קישור</button>
+          <button class="ghost" id="btnReload">טען מהענן</button>
+          <button class="danger" id="btnWipe">נקה הכל (6165)</button>
+        </div>
+        <div class="hint" style="margin-top:6px">
+          ה־API תומך בקריאות GET: <code>?action=list</code> | <code>?action=upsert&sku=1234&loc=A1-03</code> |
+          <code>?action=delete&sku=1234</code> | <code>?action=wipe&code=6165</code>
+        </div>
+      </div>
 
       <p class="muted" style="margin-top:12px">טיפ: סורק ברקוד שמקליד מספרים יפעל כאן ישר, רק תן ל־<span class="kbd">חיפוש מק״ט</span> פוקוס.</p>
     </div>
@@ -112,199 +134,167 @@
 
 <script>
 (function(){
-  const KEY = "warehouseMiniDB"; // array of {sku, loc}
-  const $ = sel => document.querySelector(sel);
+  const $ = s => document.querySelector(s);
 
-  const searchSku = $("#searchSku");
-  const btnSearch = $("#btnSearch");
-  const searchResult = $("#searchResult");
-  const formSku = $("#formSku");
-  const formLoc = $("#formLoc");
-  const btnAdd = $("#btnAdd");
-  const btnUpdate = $("#btnUpdate");
-  const formMsg = $("#formMsg");
-  const tbody = $("#tbody");
-  const btnExport = $("#btnExport");
-  const btnImport = $("#btnImport");
-  const btnWipe = $("#btnWipe");
-  const countEl = $("#count");
+  // אלמנטים
+  const searchSku = $("#searchSku"), btnSearch = $("#btnSearch"), searchResult = $("#searchResult");
+  const formSku = $("#formSku"), formLoc = $("#formLoc"), btnAdd = $("#btnAdd"), btnUpdate = $("#btnUpdate"), formMsg = $("#formMsg");
+  const tbody = $("#tbody"), countEl = $("#count"), cloudStatus = $("#cloudStatus");
+  const apiUrlEl = $("#apiUrl"), btnSaveCloud = $("#btnSaveCloud"), btnReload = $("#btnReload"), btnWipe = $("#btnWipe");
 
-  const load = () => {
-    try { return JSON.parse(localStorage.getItem(KEY)) || []; }
-    catch(e){ return []; }
-  };
-  const save = (arr) => localStorage.setItem(KEY, JSON.stringify(arr));
-  const normalizeSku = (v) => (v||"").trim();
-  const validSku = (v) => /^\d{4,5}$/.test(v);
+  // תצורה מקומית
+  const CFG_KEY = "findloc_api_url";
+  function loadApi(){ return localStorage.getItem(CFG_KEY)||""; }
+  function saveApi(url){ localStorage.setItem(CFG_KEY, url||""); }
+  let API = loadApi(); apiUrlEl.value = API;
 
-  // קלט ספרות בלבד עד 5 תווים
+  // עוזרים
+  const validSku = v => /^\d{4,5}$/.test(v||"");
   function enforceDigits(el){
     el.addEventListener("input", ()=>{
-      const digits = el.value.replace(/\D/g,"").slice(0,5);
-      if(el.value !== digits) el.value = digits;
+      const d = (el.value||"").replace(/\D/g,"").slice(0,5);
+      if(el.value !== d) el.value = d;
     });
   }
-  enforceDigits(searchSku);
-  enforceDigits(formSku);
+  enforceDigits(searchSku); enforceDigits(formSku);
 
-  function render(){
-    const data = load().sort((a,b)=>a.sku.localeCompare(b.sku,'he'));
-    tbody.innerHTML = "";
-    countEl.textContent = data.length ? `(${data.length})` : "";
-    if(!data.length){
-      const tr = document.createElement("tr");
-      const td = document.createElement("td");
-      td.colSpan = 3;
-      td.textContent = "אין נתונים עדיין";
-      td.className = "muted";
-      tr.appendChild(td);
-      tbody.appendChild(tr);
-      return;
-    }
-    for(const row of data){
-      const tr = document.createElement("tr");
-      tr.className = "clickable-row";
-      const tdSku = document.createElement("td");
-      const tdLoc = document.createElement("td");
-      const tdAct = document.createElement("td");
-      tdSku.textContent = row.sku;
-      tdLoc.textContent = row.loc;
+  function toast(msg){
+    formMsg.style.display = "block"; formMsg.textContent = msg;
+    clearTimeout(toast._t); toast._t = setTimeout(()=> formMsg.style.display="none", 1600);
+  }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[m])); }
 
-      const copyBtn = document.createElement("button");
-      copyBtn.textContent = "העתק";
-      copyBtn.className = "ghost";
-      copyBtn.onclick = async (e)=> {
-        e.stopPropagation();
-        await navigator.clipboard.writeText(row.loc);
-        toast(`הועתק: ${row.loc}`);
-      };
+  let cache = new Map(); // sku -> loc
 
-      const delBtn = document.createElement("button");
-      delBtn.textContent = "מחק";
-      delBtn.className = "danger";
-      delBtn.onclick = (e)=> {
-        e.stopPropagation();
-        const arr = load().filter(x=>x.sku!==row.sku);
-        save(arr); render(); toast("נמחק");
-      };
+  function withApi(action, params={}){
+    if(!API){ throw new Error("לא הוגדר קישור Web App"); }
+    const url = new URL(API);
+    url.searchParams.set("action", action);
+    for(const [k,v] of Object.entries(params)){ url.searchParams.set(k, v); }
+    // GET בלבד — נמנע מ-CORS/Preflight
+    return fetch(url.toString(), {cache:"no-store"}).then(r=>r.json());
+  }
 
-      tr.onclick = ()=>{
-        formSku.value = row.sku;
-        formLoc.value = row.loc;
-        formLoc.focus();
-      };
-
-      tdAct.append(copyBtn, " ", delBtn);
-      tr.append(tdSku, tdLoc, tdAct);
-      tbody.appendChild(tr);
+  async function fetchList(){
+    if(!API){ cloudStatus.textContent = "הדבק קישור Web App ולחץ 'שמור'."; return; }
+    cloudStatus.textContent = "טוען מהענן…";
+    try{
+      const data = await withApi("list");
+      if(!Array.isArray(data)) throw new Error("תגובה לא תקינה");
+      cache.clear();
+      for(const r of data){
+        if(r && validSku(r.sku) && r.loc) cache.set(String(r.sku).trim(), String(r.loc).trim());
+      }
+      render();
+      cloudStatus.textContent = `נטען: ${cache.size} פריטים.`;
+    }catch(e){
+      cloudStatus.textContent = "שגיאה בטעינה: " + e.message;
     }
   }
 
-  function toast(msg){
-    formMsg.style.display = "block";
-    formMsg.textContent = msg;
-    clearTimeout(toast._t);
-    toast._t = setTimeout(()=>{ formMsg.style.display = "none"; }, 1600);
+  function render(){
+    tbody.innerHTML = "";
+    const rows = [...cache.entries()].map(([sku,loc])=>({sku,loc})).sort((a,b)=> a.sku.localeCompare(b.sku,'he'));
+    countEl.textContent = rows.length ? `(${rows.length})` : "";
+    if(!rows.length){
+      const tr = document.createElement("tr"); const td = document.createElement("td");
+      td.colSpan = 3; td.textContent = "אין נתונים"; td.className = "muted";
+      tr.appendChild(td); tbody.appendChild(tr); return;
+    }
+    for(const row of rows){
+      const tr = document.createElement("tr"); tr.className = "clickable-row";
+      const tdSku = document.createElement("td"); tdSku.textContent = row.sku;
+      const tdLoc = document.createElement("td"); tdLoc.textContent = row.loc;
+      const tdAct = document.createElement("td");
+
+      const copyBtn = document.createElement("button"); copyBtn.textContent = "העתק"; copyBtn.className = "ghost";
+      copyBtn.onclick = async (e)=>{ e.stopPropagation(); await navigator.clipboard.writeText(row.loc); toast(`הועתק: ${row.loc}`); };
+
+      const delBtn = document.createElement("button"); delBtn.textContent = "מחק"; delBtn.className = "danger";
+      delBtn.onclick = async (e)=>{
+        e.stopPropagation();
+        await withApi("delete", {sku: row.sku});
+        cache.delete(row.sku); render(); toast("נמחק");
+      };
+
+      tr.onclick = ()=>{ formSku.value = row.sku; formLoc.value = row.loc; formLoc.focus(); };
+      tdAct.append(copyBtn, " ", delBtn);
+      tr.append(tdSku, tdLoc, tdAct); tbody.appendChild(tr);
+    }
+  }
+
+  function showSearchResult(sku, loc){
+    searchResult.style.display = "block";
+    if(!loc){ searchResult.innerHTML = `לא נמצא מק״ט ${sku}.`; return; }
+    searchResult.innerHTML = `
+      <div class="bigCard">
+        <div>
+          <div class="skuLine">המיקום של <strong>${sku}</strong>:</div>
+          <div class="locBig" dir="ltr">${escapeHtml(loc)}</div>
+        </div>
+        <div class="actions"><button class="ghost" id="btnCopyLoc">העתק</button></div>
+      </div>`;
+    const copyBtn = document.getElementById("btnCopyLoc");
+    if(copyBtn){ copyBtn.onclick = async ()=>{ await navigator.clipboard.writeText(loc); toast(`הועתק: ${loc}`); }; }
   }
 
   function doSearch(){
-    const sku = normalizeSku(searchSku.value);
+    const sku = (searchSku.value||"").trim();
     if(!validSku(sku)){
       searchResult.style.display = "block";
-      searchResult.textContent = "מק״ט לא תקין — צריך 4–5 ספרות.";
+      searchResult.innerHTML = "מק״ט לא תקין — צריך 4–5 ספרות.";
       return;
     }
-    const hit = load().find(x=>x.sku===sku);
-    searchResult.style.display = "block";
-    searchResult.textContent = hit ? `המיקום של ${sku}: ${hit.loc}` : `לא נמצא מק״ט ${sku}.`;
+    showSearchResult(sku, cache.get(sku));
   }
 
-  function addNew(){
-    const sku = normalizeSku(formSku.value);
+  async function addNew(){
+    const sku = (formSku.value||"").trim();
     const loc = (formLoc.value||"").trim();
     if(!validSku(sku)) return toast("מק״ט לא תקין (4–5 ספרות).");
     if(!loc) return toast("צריך למלא מיקום.");
-    const arr = load();
-    if(arr.some(x=>x.sku===sku)) return toast("קיים כבר מק״ט כזה. השתמש בעדכון.");
-    arr.push({sku, loc});
-    save(arr); render(); toast("נוסף בהצלחה.");
+    await withApi("upsert", {sku, loc});
+    cache.set(sku, loc); render(); toast("נוסף בהצלחה.");
   }
 
-  function updateLoc(){
-    const sku = normalizeSku(formSku.value);
+  async function updateLoc(){
+    const sku = (formSku.value||"").trim();
     const loc = (formLoc.value||"").trim();
     if(!validSku(sku)) return toast("מק״ט לא תקין (4–5 ספרות).");
     if(!loc) return toast("צריך למלא מיקום.");
-    const arr = load();
-    const idx = arr.findIndex(x=>x.sku===sku);
-    if(idx<0) return toast("לא קיים מק״ט כזה. הוסף חדש.");
-    arr[idx].loc = loc;
-    save(arr); render(); toast("עודכן בהצלחה.");
+    await withApi("upsert", {sku, loc});
+    cache.set(sku, loc); render(); toast("עודכן בהצלחה.");
   }
 
-  btnSearch.addEventListener("click", doSearch);
-  searchSku.addEventListener("keydown", (e)=>{ if(e.key==="Enter"){ e.preventDefault(); doSearch(); } });
-
-  btnAdd.addEventListener("click", (e)=>{ e.preventDefault(); addNew(); });
-  btnUpdate.addEventListener("click", (e)=>{ e.preventDefault(); updateLoc(); });
-
-  formLoc.addEventListener("keydown", (e)=>{
-    if(e.key==="Enter"){ e.preventDefault(); updateLoc(); }
-  });
-
-  btnExport.addEventListener("click", ()=>{
-    const data = load().sort((a,b)=>a.sku.localeCompare(b.sku,'he'));
-    const blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "warehouse-mini.json"; a.click();
-    URL.revokeObjectURL(url);
-  });
-
-  btnImport.addEventListener("click", ()=>{
-    const inp = document.createElement("input");
-    inp.type = "file"; inp.accept = "application/json";
-    inp.onchange = ()=>{
-      const file = inp.files[0];
-      if(!file) return;
-      const fr = new FileReader();
-      fr.onload = ()=>{
-        try{
-          const data = JSON.parse(fr.result);
-          if(!Array.isArray(data)) throw new Error("פורמט לא תקין");
-          const clean = [];
-          for(const r of data){
-            if(r && typeof r.sku==="string" && typeof r.loc==="string" && validSku(r.sku) && r.loc.trim()){
-              clean.push({sku:r.sku.trim(), loc:r.loc.trim()});
-            }
-          }
-          save(clean); render(); toast("ייבוא הושלם.");
-        }catch(e){ toast("שגיאה בייבוא."); }
-      };
-      fr.readAsText(file);
-    };
-    inp.click();
-  });
-
-  // מחיקה מלאה — רק עם קוד 6165
-  btnWipe.addEventListener("click", ()=>{
+  async function wipeAll(){
     const code = prompt("להמשך מחיקה הזן/ני קוד:");
     if(code !== "6165"){ toast("קוד מחיקה שגוי."); return; }
-    if(!confirm("אישור סופי: למחוק את כל הנתונים המקומיים?")){
-      toast("בוטל.");
-      return;
-    }
-    save([]); render(); toast("נוקה.");
-  });
-
-  window.addEventListener("load", ()=> setTimeout(()=> searchSku.focus(), 100));
-
-  const params = new URLSearchParams(location.search);
-  if(params.get("seed")==="1" && load().length===0){
-    save([{sku:"1234",loc:"A1-03"},{sku:"5678",loc:"B2-11"}]);
+    if(!confirm("אישור סופי: למחוק את כל הנתונים בגיליון?")){ toast("בוטל."); return; }
+    await withApi("wipe", {code});
+    cache.clear(); render(); toast("נוקה.");
   }
 
-  render();
+  // אירועים
+  btnSearch.addEventListener("click", doSearch);
+  searchSku.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); doSearch(); } });
+  btnAdd.addEventListener("click", e=>{ e.preventDefault(); addNew(); });
+  btnUpdate.addEventListener("click", e=>{ e.preventDefault(); updateLoc(); });
+  formLoc.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); updateLoc(); } });
+
+  btnSaveCloud.addEventListener("click", ()=>{
+    API = (apiUrlEl.value||"").trim();
+    saveApi(API);
+    toast("הקישור נשמר.");
+  });
+  btnReload.addEventListener("click", fetchList);
+  btnWipe.addEventListener("click", wipeAll);
+
+  // התחלה
+  window.addEventListener("load", ()=>{
+    setTimeout(()=> searchSku.focus(), 120);
+    if(API) fetchList();
+    else cloudStatus.textContent = "הדבק קישור Web App ולחץ 'שמור'.";
+  });
 })();
 </script>
 </body>
