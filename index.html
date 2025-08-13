@@ -559,19 +559,45 @@
     });
     renderWhWorkRow2();
   }
-  function renderWhWorkRow2(){
-    const skuEl=$('#wh2Sku'), colorEl=$('#wh2Color'), sizesEl=$('#wh2Sizes');
-    const idxEl=$('#wh2Index'), totEl=$('#wh2Total');
-    if(!whQueue2.length){ skuEl.textContent='—'; colorEl.textContent='—'; sizesEl.innerHTML='<div class="small">אין שורות לעבודה.</div>'; idxEl.textContent='0'; totEl.textContent='0'; return; }
-    if(whIndex2>=whQueue2.length) whIndex2=0; whSelected2 = new Set();
-    const {sku,color} = whQueue2[whIndex2];
-    skuEl.textContent = sku; colorEl.textContent = color; idxEl.textContent = String(whIndex2+1); totEl.textContent = String(whQueue2.length);
-    const sizes = (missing2[sku] && missing2[sku][color]) ? [...missing2[sku][color]] : [];
-    sizesEl.innerHTML = sizes.map(sz=>`<button class="pill" data-size="${sz}" type="button">${sz.toUpperCase()}</button>`).join('');
-    sizesEl.querySelectorAll('button').forEach(btn=>{
-      btn.addEventListener('click', ()=>{ const sz=btn.dataset.size; if(whSelected2.has(sz)){ whSelected2.delete(sz); btn.classList.remove('found'); } else { whSelected2.add(sz); btn.classList.add('found'); } });
-    });
+ function renderWhWorkRow2(){
+  const skuEl=$('#wh2Sku'), colorEl=$('#wh2Color'), sizesEl=$('#wh2Sizes');
+  const idxEl=$('#wh2Index'), totEl=$('#wh2Total');
+  if(!whQueue2.length){ 
+    skuEl.textContent='—'; 
+    colorEl.textContent='—'; 
+    sizesEl.innerHTML='<div class="small">אין שורות לעבודה.</div>'; 
+    idxEl.textContent='0'; 
+    totEl.textContent='0'; 
+    return; 
   }
+  if(whIndex2>=whQueue2.length) whIndex2=0; 
+  whSelected2 = new Set();
+  const {sku,color} = whQueue2[whIndex2];
+  skuEl.textContent = sku; 
+  colorEl.textContent = color; 
+  idxEl.textContent = String(whIndex2+1); 
+  totEl.textContent = String(whQueue2.length);
+  const sizes = (missing2[sku] && missing2[sku][color]) ? [...missing2[sku][color]] : [];
+  sizesEl.innerHTML = sizes.map(sz=>`<button class="pill" data-size="${sz}" type="button">${sz.toUpperCase()}</button>`).join('');
+  sizesEl.querySelectorAll('button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ 
+      const sz=btn.dataset.size; 
+      if(whSelected2.has(sz)){ whSelected2.delete(sz); btn.classList.remove('found'); } 
+      else { whSelected2.add(sz); btn.classList.add('found'); } 
+    });
+  });
+
+  // === הוספת קוד הרמז כאן ===
+  const hintEl = $('#wh2Hint');
+  const loc = getLocationHint(sku);
+  if(loc){ 
+    hintEl.textContent = `רמז מיקום: ${loc}`; 
+    hintEl.style.display='block'; 
+  } else { 
+    hintEl.style.display='none'; 
+  }
+}
+
   $('#wh2Skip').addEventListener('click', ()=>{ if(!whQueue2.length) return; whIndex2=(whIndex2+1)%whQueue2.length; renderWhWorkRow2(); });
   $('#wh2Approve').addEventListener('click', ()=>{
     if(!whQueue2.length) return;
