@@ -447,164 +447,86 @@
     renderAll1(); toast('עודכן');
   });
 
-  // ============ TAB 1: FIFO scan queue ============
-const scanQueue1 = [];
-let processingScanQueue1 = false;
-
-async function processScanQueue1() {
-  if (processingScanQueue1) return;
-  processingScanQueue1 = true;
-  while (scanQueue1.length) {
-    const code = scanQueue1.shift();
-    try {
-      await Promise.resolve(handleScan1(code)); // תומך גם בסינכרוני וגם בא-סינכרוני
-    } catch (err) {
-      console.error('Scan error (TAB1):', err);
-      if (typeof toast === 'function') toast('שגיאה בעיבוד סריקה');
-    }
-  }
-  processingScanQueue1 = false;
-}
-
-function enqueueScan1(v) {
-  const code = String(v || '').trim();
-  if (!code) return;
-  scanQueue1.push(code);
-  processScanQueue1();
-}
-
-// ===== bindings (TAB1) =====
 const scanInput1 = $('#scanInput1');
+  scanInput1.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ const v=scanInput1.value.trim(); if(!v) return; handleScan1(v); scanInput1.value=''; }});
+  let timer1=null; scanInput1.addEventListener('input', ()=>{ const v=scanInput1.value.trim(); if(v.length<6) return; if(timer1) clearTimeout(timer1); timer1=setTimeout(()=>{ if(scanInput1.value.trim()===v){ handleScan1(v); scanInput1.value=''; } },150); });
+  $('#importFile1').addEventListener('click', ()=> importCatalog1());
+  $('#fileInput1').addEventListener('change', ()=> importCatalog1());
+  $('#exportJson1').addEventListener('click', ()=> downloadFile('barcodes.json', JSON.stringify(barcodes,null,2)));
+  $('#exportMissingAll1').addEventListener('click', ()=> downloadFile('missing.csv', missingToCsv(missing1)));
+  $('#exportWhShort1').addEventListener('click', ()=> downloadFile('warehouse_shortage.csv', missingToCsv(whShort1)));
+  $('#clearMissing1').addEventListener('click', ()=>{ if(confirm('לנקות את רשימת החוסרים?')){ missing1={}; LS.set(KEYS.missing1,missing1); renderAll1(); }});
+  $('#resetAll1').addEventListener('click', ()=>{ if(confirm('לאפס חוסרים/חוסר מחסן/סריקות?')){ missing1={}; whShort1={}; scans1={}; LS.set(KEYS.missing1,missing1); LS.set(KEYS.whShort1,whShort1); LS.set(KEYS.scans1,scans1); renderAll1(); }});
+  $('#markUnknown1').addEventListener('click', ()=>{ const v=scanInput1.value.trim(); if(!v) return toast('אין ברקוד בשדה'); toast('לא נמצא בקטלוג'); });
 
-// Enter -> מכניס לתור (מונע כפילות מול הדיבאונס כי מרוקנים את הערך מייד)
-scanInput1.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    const v = scanInput1.value.trim();
-    if (!v) return;
-    enqueueScan1(v);
-    scanInput1.value = '';
-  }
-});
-
-// סורק/הקלדה -> דיבאונס ואז מכניס לתור אם לא השתנה הערך בינתיים
-let timer1 = null;
-scanInput1.addEventListener('input', () => {
-  const v = scanInput1.value.trim();
-  if (v.length < 6) return;
-  if (timer1) clearTimeout(timer1);
-  timer1 = setTimeout(() => {
-    if (scanInput1.value.trim() === v) {
-      enqueueScan1(v);
-      scanInput1.value = '';
-    }
-  }, 150);
-});
-
-// ===== כפתורים קיימים (ללא שינוי) =====
-$('#importFile1').addEventListener('click', () => importCatalog1());
-$('#fileInput1').addEventListener('change', () => importCatalog1());
-$('#exportJson1').addEventListener('click', () =>
-  downloadFile('barcodes.json', JSON.stringify(barcodes, null, 2))
-);
-$('#exportMissingAll1').addEventListener('click', () =>
-  downloadFile('missing.csv', missingToCsv(missing1))
-);
-$('#exportWhShort1').addEventListener('click', () =>
-  downloadFile('warehouse_shortage.csv', missingToCsv(whShort1))
-);
-$('#clearMissing1').addEventListener('click', () => {
-  if (confirm('לנקות את רשימת החוסרים?')) {
-    missing1 = {};
-    LS.set(KEYS.missing1, missing1);
+  function handleScan1(code){
+    const meta = barcodes[code];
+    if(!meta){ $('#lastScanNote1').textContent = `ברקוד לא נמצא בקטלוג: ${code}`; toast('לא נמצא בקטלוג'); return; }
+    const sku=String(meta.sku), color=String(meta.color), size=String(meta.size).toLowerCase();
+    ensureMissingSkuLoaded1(sku);
+    removeFromMissing1(sku,color,size);
+    scans1[sku]=scans1[sku]||{}; scans1[sku][color]=scans1[sku][color]||[]; if(!scans1[sku][color].includes(size)) scans1[sku][color].push(size); LS.set(KEYS.scans1,scans1);
+    $('#lastScanNote1').textContent = `נסרק ✓ ${code} → ${sku} / ${color} / ${size.toUpperCase()}`;
     renderAll1();
   }
-});
-$('#resetAll1').addEventListener('click', () => {
-  if (confirm('לאפס חוסרים/חוסר מחסן/סריקות?')) {
-    missing1 = {};
-    whShort1 = {};
-    scans1 = {};
-    LS.set(KEYS.missing1, missing1);
-    LS.set(KEYS.whShort1, whShort1);
-    LS.set(KEYS.scans1, scans1);
-    renderAll1();
+
+  async function importCatalog1(){
+    try{
+      const f = $('#fileInput1').files[0]; if(!f){ toast('לא נבחר קובץ'); return; }
+      const text = await f.text(); let map={};
+      try{ map = JSON.parse(text); if(Array.isArray(map)){ const tmp={}; for(const row of map){ const bc=String(row.barcode??'').trim(); if(!bc) continue; tmp[bc]={sku:String(row.sku),color:String(row.color),size:String(row.size).toLowerCase()}; } map=tmp; } }catch(e){
+        map = csvToMap(text);
+      }
+      if(Object.keys(map).length===0){ toast('קובץ לא מזוהה'); return; }
+      barcodes = map; LS.set(KEYS.barcodes,barcodes); catalog = deriveCatalog(barcodes); renderAll1(); updateStats2(); toast('ייבוא קטלוג בוצע');
+    }catch(e){ console.error(e); toast('שגיאה בייבוא'); }
   }
-});
-$('#markUnknown1').addEventListener('click', () => {
-  const v = scanInput1.value.trim();
-  if (!v) return toast('אין ברקוד בשדה');
-  toast('לא נמצא בקטלוג');
-});
 
-// ===== הפונקציות הקיימות שלך (ללא שינוי) =====
-function handleScan1(code){
-  const meta = barcodes[code];
-  if(!meta){ $('#lastScanNote1').textContent = `ברקוד לא נמצא בקטלוג: ${code}`; toast('לא נמצא בקטלוג'); return; }
-  const sku=String(meta.sku), color=String(meta.color), size=String(meta.size).toLowerCase();
-  ensureMissingSkuLoaded1(sku);
-  removeFromMissing1(sku,color,size);
-  scans1[sku]=scans1[sku]||{}; scans1[sku][color]=scans1[sku][color]||[]; if(!scans1[sku][color].includes(size)) scans1[sku][color].push(size); LS.set(KEYS.scans1,scans1);
-  $('#lastScanNote1').textContent = `נסרק ✓ ${code} → ${sku} / ${color} / ${size.toUpperCase()}`;
-  renderAll1();
-}
+  // Manual add (tab1)
+  function addManual1(){
+    const bc=$('#manBarcode1').value.trim(); const sku=$('#manSku1').value.trim(); const color=$('#manColor1').value.trim(); const size=$('#manSize1').value.trim().toLowerCase();
+    if(!bc||!sku||!color||!size){ toast('נא למלא ברקוד/מק״ט/צבע/מידה'); return; }
+    barcodes[bc]={sku,color,size}; LS.set(KEYS.barcodes,barcodes); catalog=deriveCatalog(barcodes);
+    $('#manBarcode1').value=''; $('#manSku1').value=''; $('#manColor1').value=''; $('#manSize1').value=''; updateStats1(); updateStats2(); toast('נוסף לקטלוג');
+  }
+  $('#addManual1').addEventListener('click', addManual1);
+  ['manBarcode1','manSku1','manColor1','manSize1'].forEach(id=> $('#'+id).addEventListener('keydown',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); addManual1(); }}));
 
-async function importCatalog1(){
-  try{
-    const f = $('#fileInput1').files[0]; if(!f){ toast('לא נבחר קובץ'); return; }
-    const text = await f.text(); let map={};
-    try{ map = JSON.parse(text); if(Array.isArray(map)){ const tmp={}; for(const row of map){ const bc=String(row.barcode??'').trim(); if(!bc) continue; tmp[bc]={sku:String(row.sku),color:String(row.color),size:String(row.size).toLowerCase()}; } map=tmp; } }catch(e){
-      map = csvToMap(text);
+  // ============ TAB 2: Scanned = missing with FIFO ============
+  let scans2   = LS.get(KEYS.scans2, {});
+  let missing2 = LS.get(KEYS.missing2, {});
+  let whShort2 = LS.get(KEYS.whShort2, {});
+  let order2   = LS.get(KEYS.order2, []); // array of {sku,color}
+
+  function pairKey(p){ return `${p.sku}__${p.color}`; }
+  function ensurePairInOrder(sku,color){
+    const key = pairKey({sku,color});
+    if(!order2.some(p=>pairKey(p)===key)){
+      order2.push({sku,color});
+      LS.set(KEYS.order2, order2);
     }
-    if(Object.keys(map).length===0){ toast('קובץ לא מזוהה'); return; }
-    barcodes = map; LS.set(KEYS.barcodes,barcodes); catalog = deriveCatalog(barcodes); renderAll1(); updateStats2(); toast('ייבוא קטלוג בוצע');
-  }catch(e){ console.error(e); toast('שגיאה בייבוא'); }
-}
-
-// Manual add (tab1)
-function addManual1(){
-  const bc=$('#manBarcode1').value.trim(); const sku=$('#manSku1').value.trim(); const color=$('#manColor1').value.trim(); const size=$('#manSize1').value.trim().toLowerCase();
-  if(!bc||!sku||!color||!size){ toast('נא למלא ברקוד/מק״ט/צבע/מידה'); return; }
-  barcodes[bc]={sku,color,size}; LS.set(KEYS.barcodes,barcodes); catalog=deriveCatalog(barcodes);
-  $('#manBarcode1').value=''; $('#manSku1').value=''; $('#manColor1').value=''; $('#manSize1').value=''; updateStats1(); updateStats2(); toast('נוסף לקטלוג');
-}
-$('#addManual1').addEventListener('click', addManual1);
-['manBarcode1','manSku1','manColor1','manSize1'].forEach(id=> $('#'+id).addEventListener('keydown',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); addManual1(); }}));
-
-// ============ TAB 2 (כמו שהיה) ============
-let scans2   = LS.get(KEYS.scans2, {});
-let missing2 = LS.get(KEYS.missing2, {});
-let whShort2 = LS.get(KEYS.whShort2, {});
-let order2   = LS.get(KEYS.order2, []); // array of {sku,color}
-
-function pairKey(p){ return `${p.sku}__${p.color}`; }
-function ensurePairInOrder(sku,color){
-  const key = pairKey({sku,color});
-  if(!order2.some(p=>pairKey(p)===key)){
-    order2.push({sku,color});
+  }
+  function removePairFromOrder(sku,color){
+    const key = pairKey({sku,color});
+    order2 = order2.filter(p => pairKey(p)!==key);
     LS.set(KEYS.order2, order2);
   }
-}
-function removePairFromOrder(sku,color){
-  const key = pairKey({sku,color});
-  order2 = order2.filter(p => pairKey(p)!==key);
-  LS.set(KEYS.order2, order2);
-}
 
-function renderMissingAll2(){
-  const box = $('#missingAll2'); box.innerHTML = '';
-  const frag = document.createDocumentFragment();
-  if(order2.length===0){ box.innerHTML = '<div class="small">הרשימה ריקה — סרוק פריטים חסרים כדי להוסיף.</div>'; }
-  order2.forEach(({sku,color})=>{
-    if(!missing2[sku] || !missing2[sku][color] || !missing2[sku][color].length) return;
-    const row = document.createElement('div'); row.className='kv';
-    const pills = missing2[sku][color].map(sz=>`<span class="pill small">${sz.toUpperCase()}</span>`).join(' ');
-    row.innerHTML = `<div><b>${escapeHtml(sku)}</b> · ${escapeHtml(color)}</div><div>${pills}</div>`;
-    frag.appendChild(row);
-  });
-  box.appendChild(frag);
-  $('#statMissing2').textContent = missingCount(missing2);
-  buildWhQueue2();
-}
+  function renderMissingAll2(){
+    const box = $('#missingAll2'); box.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    if(order2.length===0){ box.innerHTML = '<div class="small">הרשימה ריקה — סרוק פריטים חסרים כדי להוסיף.</div>'; }
+    order2.forEach(({sku,color})=>{
+      if(!missing2[sku] || !missing2[sku][color] || !missing2[sku][color].length) return;
+      const row = document.createElement('div'); row.className='kv';
+      const pills = missing2[sku][color].map(sz=>`<span class="pill small">${sz.toUpperCase()}</span>`).join(' ');
+      row.innerHTML = `<div><b>${escapeHtml(sku)}</b> · ${escapeHtml(color)}</div><div>${pills}</div>`;
+      frag.appendChild(row);
+    });
+    box.appendChild(frag);
+    $('#statMissing2').textContent = missingCount(missing2);
+    buildWhQueue2();
+  }
 
   function handleScan2(code){
     const meta = barcodes[code];
