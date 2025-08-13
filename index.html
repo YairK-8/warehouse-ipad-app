@@ -1,339 +1,693 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-  <meta charset="utf-8">
-  <title>FindLoc — חיפוש מק״ט למיקום</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    :root{--bg:#f7f7fb;--card:#fff;--accent:#2563eb;--text:#0f172a}
-    *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:var(--bg);color:var(--text)}
-    .wrap{max-width:680px;margin:40px auto;padding:16px}
-    .card{background:var(--card);border-radius:18px;box-shadow:0 10px 25px rgba(0,0,0,.06);padding:20px}
-    h1{font-size:22px;margin:0 0 12px}
-    p.note{margin:0 0 16px;color:#475569}
-    label{display:block;margin:10px 0 6px}
-    input,button{font:inherit}
-    input[type=text]{width:100%;padding:12px 14px;border:1px solid #e2e8f0;border-radius:12px;outline:none}
-    input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
-    .row{display:flex;gap:10px;flex-wrap:wrap}
-    .row > *{flex:1}
-    button{padding:12px 14px;border:none;border-radius:12px;cursor:pointer}
-    .primary{background:var(--accent);color:#fff}
-    .ghost{background:#eef2ff;color:#1e293b}
-    .danger{background:#ef4444;color:#fff}
-    .muted{color:#64748b}
-    .result{margin-top:14px;padding:12px 14px;background:#ecfeff;border:1px solid #bae6fd;border-radius:12px}
-    table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden}
-    th,td{padding:10px 12px;border-bottom:1px solid #e2e8f0;text-align:right}
-    th{background:#eef2ff}
-    .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#e2e8f0;padding:2px 6px;border-radius:6px}
-    .flex{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-    .pill{display:inline-block;padding:4px 10px;background:#f1f5f9;border-radius:999px;font-size:12px}
-    .clickable-row{cursor:pointer}
-    .count{font-size:12px}
-
-    /* חיפוש גדול ודומיננטי */
-    .hero{background:linear-gradient(180deg,#eef2ff, #ffffff);border:1px solid #dbeafe;padding:18px;border-radius:16px;box-shadow:0 8px 20px rgba(37,99,235,.10)}
-    .hero .row input[type=text]{font-size:22px;padding:18px 16px}
-    .hero .row button{font-size:18px;padding:18px 16px}
-
-    /* תצוגת תוצאה גדולה */
-    .bigCard{
-      display:flex; align-items:center; justify-content:space-between; gap:12px;
-      padding:16px; border:1px solid #bfdbfe; border-radius:14px;
-      background:#e0f2fe;
-    }
-    .bigCard .skuLine{font-size:13px; color:#334155; margin-bottom:4px}
-    .bigCard .locBig{font-size:34px; font-weight:800; letter-spacing:.3px}
-    .bigCard .actions button{padding:10px 12px}
-
-    /* אזור רשימה מתקפל */
-    details.list{border:1px solid #e2e8f0;border-radius:12px;background:#fff;margin-top:20px}
-    details.list summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;background:#eef2ff;border-radius:12px}
-    details.list summary::-webkit-details-marker{display:none}
-    details .chev{transition:transform .2s}
-    details[open] .chev{transform:rotate(180deg)}
-    .details-body{padding:12px 14px}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>חבילת חוסרים ומיקומים — גרסה 4 (תיקונים)</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --card:#ffffff; --text:#0f172a; --muted:#64748b;
+    --border:#e2e8f0; --accent:#2563eb; --ok:#16a34a; --warn:#d97706; --danger:#dc2626;
+    --chip:#f1f5f9; --tab:#e6eefc;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%; margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+  .wrap{max-width:1300px; margin:0 auto; padding:16px}
+  header{display:flex; gap:12px; align-items:center; justify-content:space-between; margin-bottom:12px}
+  h1{font-size:20px; margin:0}
+  .tabs{display:flex; gap:8px; background:var(--tab); border:1px solid var(--border); border-radius:12px; padding:6px; position:sticky; top:0; z-index:10}
+  .tab{padding:10px 12px; border-radius:10px; cursor:pointer; color:var(--muted)}
+  .tab.active{background:#fff; color:var(--text); border:1px solid var(--border); box-shadow:0 2px 8px rgba(0,0,0,.05)}
+  section[hidden]{display:none}
+  .row{display:flex; gap:12px; flex-wrap:wrap}
+  .col{flex:1 1 360px; min-width:340px; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px; box-shadow:0 6px 20px rgba(0,0,0,.04)}
+  h2{font-size:16px; margin:0 0 8px; color:var(--muted)}
+  label{font-size:12px; color:var(--muted); display:block; margin:6px 0 4px}
+  input,select,button{border-radius:10px; border:1px solid var(--border); background:#fff; color:var(--text); padding:10px; font-size:15px; outline:none}
+  input:focus,select:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+  .actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
+  button{cursor:pointer}
+  button:hover{filter:brightness(.98)}
+  .accent{background:#eef2ff; border-color:#c7d2fe; color:#1e40af}
+  .primary{background:var(--accent); color:#fff; border-color:#1d4ed8}
+  .danger{background:#fee2e2; border-color:#fecaca; color:#991b1b}
+  .ok{background:#dcfce7; border-color:#bbf7d0; color:#166534}
+  .ghost{background:#f8fafc; border-color:#e2e8f0; color:#0f172a}
+  .list{max-height:560px; overflow:auto; border:1px dashed var(--border); border-radius:10px; padding:8px; background:#fff}
+  .kv{display:flex; justify-content:space-between; gap:12px; padding:10px; border-bottom:1px dashed var(--border)}
+  .kv:last-child{border-bottom:0}
+  .pill{display:inline-block; padding:8px 12px; border-radius:999px; background:var(--chip); border:1px solid var(--border); font-size:13px; margin:4px}
+  .pill.small{padding:2px 8px; font-size:12px;}
+  .small{font-size:12px; color:var(--muted)}
+  .num{font-variant-numeric: tabular-nums}
+  .scanbox{display:flex; gap:8px}
+  .scanbox input{flex:1}
+  .divider{height:1px; background:var(--border); margin:10px -12px}
+  .card{background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px}
+  .sticky{position:sticky; top:8px}
+  .found{outline:2px solid #22c55e; background:#dcfce7; color:#166534}
+  .hint{padding:8px 10px; background:#ecfeff; border:1px solid #bae6fd; border-radius:10px; margin:8px 0; color:#0369a1}
+  #toast{position:fixed; left:50%; transform:translateX(-50%); bottom:16px; background:#111827; color:#fff; border:1px solid #1f2937; padding:10px 14px; border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,.4); display:none}
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden}
+  th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:right}
+  th{background:#f1f5f9;color:var(--muted)}
+  .collapse-header{display:flex; align-items:center; justify-content:space-between; cursor:pointer; user-select:none; padding:10px 12px; border-radius:10px; background:#f8fafc; border:1px solid var(--border)}
+  .chev{transition:transform .2s ease}
+  .collapsed .chev{transform:rotate(180deg)}
+  .collapse-content{margin-top:8px}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <h1>מחסן מינימלי</h1>
-      <p class="note">מקלידים מק״ט (4–5 ספרות) ➜ מקבלים את המיקום. אפשר להוסיף/לעדכן.</p>
+<div class="wrap">
+  <header>
+    <h1>חבילת חוסרים ומיקומים — גרסה 4</h1>
+    <span class="small">דף 1: לא נסרק = חסר · דף 2: נסרק = חסר (FIFO) · דף 3: מיקומים</span>
+  </header>
 
-      <!-- חיפוש -->
-      <div class="hero">
-        <label>חיפוש מק״ט</label>
-        <div class="row">
-          <input id="searchSku" type="text" inputmode="numeric" pattern="\d{4,5}" placeholder="לדוגמה: 1234" autofocus>
-          <button class="primary" id="btnSearch">חפש</button>
-        </div>
-        <div id="searchResult" class="result" style="display:none"></div>
-      </div>
+  <nav class="tabs">
+    <div class="tab active" data-tab="t1">1) לא נסרק = חסר</div>
+    <div class="tab" data-tab="t2">2) נסרק = חסר</div>
+    <div class="tab" data-tab="t3">3) מיקומים במחסן</div>
+  </nav>
 
-      <hr style="margin:20px 0;border:none;border-top:1px solid #e2e8f0">
+  <!-- TAB 1 -->
+  <section id="t1">
+    <div class="row">
+      <div class="col" style="flex:2 1 640px">
+        <h2>חוסרים (מתמלא לפי סריקות לאימות)</h2>
 
-      <div class="flex">
-        <h2 style="margin:0;font-size:18px">הוספה/עדכון</h2>
-        <span class="pill muted">נשמר מקומית בדפדפן (localStorage)</span>
-      </div>
-
-      <label>מק״ט (4–5 ספרות)</label>
-      <input id="formSku" type="text" inputmode="numeric" pattern="\d{4,5}" placeholder="לדוגמה: 12345">
-      <label>מיקום (לדוגמה: A1-03 או מדף 12)</label>
-      <div class="row">
-        <input id="formLoc" type="text" placeholder="לדוגמה: A1-03">
-        <button class="ghost" id="btnAdd">הוסף חדש</button>
-        <button class="primary" id="btnUpdate">עדכן מיקום</button>
-      </div>
-      <div id="formMsg" class="result" style="display:none"></div>
-
-      <!-- רשימה מתקפלת -->
-      <details id="listDetails" class="list" open>
-        <summary>
-          <h3 style="margin:0;font-size:16px">
-            רשימת מק״טים <span id="count" class="count muted"></span>
-          </h3>
-          <span class="chev">⌃</span>
-        </summary>
-
-        <div class="details-body">
-          <div class="flex" style="margin-bottom:10px">
-            <div style="margin-inline-start:auto">
-              <button class="ghost" id="btnExport">ייצוא</button>
-              <button class="ghost" id="btnImport">ייבוא</button>
-              <button class="danger" id="btnWipe">נקה הכל</button>
-            </div>
+        <div class="card" id="whWork1">
+          <div class="kv" style="border:0; padding:0 0 6px 0">
+            <div><b>דגם:</b> <span id="wh1Sku">—</span> · <b>צבע:</b> <span id="wh1Color">—</span></div>
+            <div class="small"><span id="wh1Index">0</span>/<span id="wh1Total">0</span></div>
           </div>
-
-          <table id="table">
-            <thead><tr><th>מק״ט</th><th>מיקום</th><th>פעולות</th></tr></thead>
-            <tbody id="tbody"><tr><td colspan="3" class="muted">אין נתונים עדיין</td></tr></tbody>
-          </table>
+          <div id="wh1Hint" class="hint" style="display:none"></div>
+          <div id="wh1Sizes" class="actions" style="flex-wrap:wrap"></div>
+          <div class="actions">
+            <button id="wh1Approve" class="ok">אישור</button>
+            <button id="wh1Skip" class="ghost">דילוג</button>
+          </div>
+          <div class="small">סמן את המידות שנמצאו (יהפכו ירוק). מה שלא נבחר יעבור לרשימת "חוסר במחסן".</div>
         </div>
-      </details>
 
-      <p class="muted" style="margin-top:12px">טיפ: סורק ברקוד שמקליד מספרים יפעל כאן ישר, רק תן ל־<span class="kbd">חיפוש מק״ט</span> פוקוס.</p>
+        <div class="divider"></div>
+
+        <div id="missingAll1" class="list"></div>
+        <div class="actions">
+          <button id="exportMissingAll1" class="accent">יצוא חוסרים (CSV)</button>
+          <button id="clearMissing1" class="danger">נקה רשימת חוסרים</button>
+          <button id="resetAll1" class="danger">איפוס כל הרשימות</button>
+        </div>
+      </div>
+
+      <div class="col sticky">
+        <h2>סרוק ברקוד</h2>
+        <div class="scanbox">
+          <input id="scanInput1" placeholder="סרוק כאן..." autocomplete="off" inputmode="numeric" />
+          <button id="markUnknown1" class="ghost" title="סמן ברקוד שלא נמצא">? לא נמצא</button>
+        </div>
+        <div class="small" id="lastScanNote1">מוכן לסריקה.</div>
+
+        <div class="divider"></div>
+
+        <h2>הוספת פריט לקטלוג</h2>
+        <div class="card">
+          <label>ברקוד</label>
+          <input id="manBarcode1" placeholder="ברקוד" inputmode="numeric"/>
+          <div class="actions" style="margin-top:6px">
+            <input id="manSku1" placeholder="מק״ט" style="flex:1"/>
+            <input id="manColor1" placeholder="צבע" style="flex:1"/>
+            <select id="manSize1" style="flex:1">
+              <option value="">מידה</option>
+              <option>xs</option><option>s</option><option>m</option><option>l</option><option>xl</option><option>xxl</option>
+            </select>
+          </div>
+          <div class="actions">
+            <button id="addManual1" class="primary">הוסף</button>
+          </div>
+          <div class="small">טיפ: Enter בכל אחד מהשדות גם יוסיף.</div>
+        </div>
+
+        <div class="card" style="margin-top:10px">
+          <label>ייבוא קטלוג מקובץ (JSON/CSV)</label>
+          <input type="file" id="fileInput1" accept=".json,.csv,.txt" />
+          <div class="small">CSV בעמודות: barcode,sku,color,size</div>
+          <div class="actions"><button id="importFile1" class="accent">ייבוא</button><button id="exportJson1" class="ghost">יצוא קטלוג</button></div>
+        </div>
+
+        <div class="divider"></div>
+
+        <h2>חוסר במחסן</h2>
+        <div id="whShortList1" class="list" style="max-height:220px"></div>
+        <div class="actions"><button id="exportWhShort1" class="accent">יצוא חוסר מחסן (CSV)</button></div>
+
+        <div class="divider"></div>
+
+        <h2>סטטוס</h2>
+        <div class="kv"><div>בקטלוג</div><div class="num" id="statBarcodes1">0</div></div>
+        <div class="kv"><div>דגמים (SKU)</div><div class="num" id="statSkus1">0</div></div>
+        <div class="kv"><div>חוסרים ברשימה</div><div class="num" id="statMissing1">0</div></div>
+      </div>
     </div>
-  </div>
+  </section>
+
+  <!-- TAB 2 -->
+  <section id="t2" hidden>
+    <div class="row">
+      <div class="col" style="flex:2 1 640px">
+        <h2>רשימת חוסרים (כאן: מה שנסרק = חסר — לפי סדר סריקה)</h2>
+
+        <div class="card" id="whWork2">
+          <div class="kv" style="border:0; padding:0 0 6px 0">
+            <div><b>דגם:</b> <span id="wh2Sku">—</span> · <b>צבע:</b> <span id="wh2Color">—</span></div>
+            <div class="small"><span id="wh2Index">0</span>/<span id="wh2Total">0</span></div>
+          </div>
+          <div id="wh2Sizes" class="actions" style="flex-wrap:wrap"></div>
+          <div class="actions">
+            <button id="wh2Approve" class="ok">אישור</button>
+            <button id="wh2Skip" class="ghost">דילוג</button>
+          </div>
+          <div class="small">סמן את המידות שהושלמו (ירוק). מה שלא נבחר יעבור ל"חוסר במחסן (דף 2)".</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div id="missingAll2" class="list"></div>
+        <div class="actions">
+          <button id="exportMissingAll2" class="accent">יצוא חוסרים (CSV)</button>
+          <button id="clearMissing2" class="danger">נקה רשימת חוסרים</button>
+          <button id="resetAll2" class="danger">איפוס כל הרשימות</button>
+        </div>
+      </div>
+      <div class="col sticky">
+        <h2>סרוק ברקוד</h2>
+        <div class="scanbox">
+          <input id="scanInput2" placeholder="סרוק כאן..." autocomplete="off" inputmode="numeric" />
+          <button id="markUnknown2" class="ghost" title="סמן ברקוד שלא נמצא">? לא נמצא</button>
+        </div>
+        <div class="small" id="lastScanNote2">מוכן לסריקה.</div>
+
+        <div class="divider"></div>
+
+        <h2>חוסר במחסן (דף 2)</h2>
+        <div id="whShortList2" class="list" style="max-height:220px"></div>
+        <div class="actions"><button id="exportWhShort2" class="accent">יצוא חוסר מחסן (CSV)</button></div>
+
+        <div class="divider"></div>
+
+        <h2>סטטוס</h2>
+        <div class="kv"><div>בקטלוג</div><div class="num" id="statBarcodes2">0</div></div>
+        <div class="kv"><div>דגמים (SKU)</div><div class="num" id="statSkus2">0</div></div>
+        <div class="kv"><div>חוסרים ברשימה</div><div class="num" id="statMissing2">0</div></div>
+        <div class="small">* קטלוג נטען בלשונית 1 ומשותף לכל המערכת.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 3 -->
+  <section id="t3" hidden>
+    <div class="row">
+      <div class="col" style="flex: 1 1 640px;">
+        <h2>מיקומים במחסן</h2>
+        <div class="card">
+          <label>חיפוש מק״ט</label>
+          <div class="scanbox">
+            <input id="locSearchSku" type="text" placeholder="לדוגמה: 12345 או A12-BC">
+            <button id="btnLocSearch" class="accent">חפש</button>
+          </div>
+          <div id="locSearchResult" class="hint" style="display:none"></div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Collapsible locations list -->
+        <div class="card">
+          <div id="locCollapseHeader" class="collapse-header collapsed" title="פתח/סגור רשימת מק״טים">
+            <span><strong>רשימת מק״טים</strong></span>
+            <span class="chev">▼</span>
+          </div>
+          <div id="locCollapseContent" class="collapse-content" style="display:none">
+            <div class="actions" style="justify-content:space-between; margin-top:10px">
+              <div></div>
+              <div>
+                <button class="ghost" id="btnLocExport">ייצוא</button>
+                <button class="ghost" id="btnLocImport">ייבוא</button>
+                <button class="danger" id="btnLocWipe">נקה הכל</button>
+              </div>
+            </div>
+            <table style="margin-top:8px">
+              <thead><tr><th>מק״ט</th><th>מיקום</th><th>פעולות</th></tr></thead>
+              <tbody id="locTbody"><tr><td colspan="3" class="small">אין נתונים עדיין</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="card">
+          <h3 style="margin-top:0;color:var(--muted)">הוספה/עדכון</h3>
+          <label>מק״ט (אותיות/ספרות/מקפים, 2–16 תווים)</label>
+          <input id="locFormSku" type="text" placeholder="לדוגמה: 12345 או A12-BC">
+          <label>מיקום</label>
+          <div class="scanbox">
+            <input id="locFormLoc" type="text" placeholder="לדוגמה: A1-03">
+            <button class="ghost" id="btnLocAdd">הוסף חדש</button>
+            <button class="accent" id="btnLocUpdate">עדכן מיקום</button>
+          </div>
+          <div id="locFormMsg" class="hint" style="display:none"></div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="card">
+          <h3 style="margin:0;color:var(--muted)">ייבוא מיקומים מקובץ JSON</h3>
+          <input type="file" id="locFileInput" accept=".json" />
+          <div class="small">מבנה: מערך של אובייקטים עם שדות <code>sku</code>, <code>loc</code>.</div>
+          <div class="actions"><button id="btnLocImportFile" class="accent">ייבוא</button></div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="toast"></div>
 
 <script>
-(function(){
-  const KEY = "warehouseMiniDB";
-  const $ = sel => document.querySelector(sel);
+(() => {
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+  const toast = (msg) => { const t=$('#toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=> t.style.display='none', 1500); };
 
-  const searchSku = $("#searchSku");
-  const btnSearch = $("#btnSearch");
-  const searchResult = $("#searchResult");
-  const formSku = $("#formSku");
-  const formLoc = $("#formLoc");
-  const btnAdd = $("#btnAdd");
-  const btnUpdate = $("#btnUpdate");
-  const formMsg = $("#formMsg");
-  const tbody = $("#tbody");
-  const btnExport = $("#btnExport");
-  const btnImport = $("#btnImport");
-  const btnWipe = $("#btnWipe");
-  const countEl = $("#count");
+  // ---------- NAV ----------
+  $$('.tab').forEach(tab => tab.addEventListener('click', () => {
+    $$('.tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    const target = tab.dataset.tab;
+    ['t1','t2','t3'].forEach(id => { $('#'+id).hidden = (id !== target); });
+  }));
 
-  const load = () => {
-    try { return JSON.parse(localStorage.getItem(KEY)) || []; }
-    catch(e){ return []; }
+  // ---------- Storage keys ----------
+  const LS = {
+    get: (k,def) => { try{ const v = JSON.parse(localStorage.getItem(k)); return v ?? def; }catch(e){ return def; } },
+    set: (k,v) => localStorage.setItem(k, JSON.stringify(v))
   };
-  const save = (arr) => localStorage.setItem(KEY, JSON.stringify(arr));
-  const normalizeSku = (v) => (v||"").trim();
-  const validSku = (v) => /^\d{4,5}$/.test(v);
+  const KEYS = {
+    barcodes: 'barcodes',
+    // Tab1
+    missing1: 'missing',
+    scans1:   'scans',
+    whShort1: 'wh_short',
+    // Tab2 (FIFO)
+    missing2: 'missing_scanned',
+    scans2:   'scans_scanned',
+    whShort2: 'wh_short_scanned',
+    order2:   'order_missing_scanned', // NEW: queue order of (sku,color)
+    // Locations
+    locDB:    'warehouseMiniDB'
+  };
 
-  function enforceDigits(el){
-    el.addEventListener("input", ()=>{
-      const digits = el.value.replace(/\D/g,"").slice(0,5);
-      if(el.value !== digits) el.value = digits;
+  // ---------- Helpers ----------
+  const deriveCatalog = (barcodes) => {
+    const cat = {};
+    for(const [code,meta] of Object.entries(barcodes||{})){
+      if(!meta||!meta.sku||!meta.color||!meta.size) continue;
+      const sku=String(meta.sku), color=String(meta.color), size=String(meta.size).toLowerCase();
+      if(!cat[sku]) cat[sku] = {mapColorSizes:{}};
+      if(!cat[sku].mapColorSizes[color]) cat[sku].mapColorSizes[color] = new Set();
+      cat[sku].mapColorSizes[color].add(size);
+    }
+    return cat;
+  };
+  const missingCount = (miss) => { let n=0; for(const s of Object.keys(miss||{})){ for(const c of Object.keys(miss[s]||{})) n+=miss[s][c].length; } return n; };
+  const escapeHtml = (s)=> String(s).replace(/[&<>\"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+  const downloadFile = (filename, text)=>{ const blob=new Blob([text],{type:'text/plain;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },0); };
+  const csvToMap = (text)=>{
+    const delim = text.includes('\\t') ? '\\t' : (text.includes(';') ? ';' : ',');
+    const lines=text.split(/\\r?\\n/).filter(x=>x.trim().length); if(!lines.length) return {};
+    const header=lines[0].split(delim).map(x=>x.trim().toLowerCase());
+    const bi=header.indexOf('barcode'),si=header.indexOf('sku'),ci=header.indexOf('color'),zi=header.indexOf('size'); if(bi<0||si<0||ci<0||zi<0) return {};
+    const map={}; for(let i=1;i<lines.length;i++){ const cols=lines[i].split(delim); const bc=(cols[bi]||'').trim(); const sku=(cols[si]||'').trim(); const color=(cols[ci]||'').trim(); const size=(cols[zi]||'').trim().toLowerCase(); if(!bc||!sku||!color||!size) continue; map[bc]={sku,color,size}; }
+    return map;
+  };
+  const missingToCsv = (obj)=>{
+    const rows=[['sku','color','sizes']];
+    for(const sku of Object.keys(obj||{})){
+      for(const color of Object.keys(obj[sku]||{})){
+        rows.push([sku,color,(obj[sku][color]||[]).join('|')]);
+      }
+    }
+    return rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\\n');
+  };
+
+  // ---------- Shared: barcodes/catalog ----------
+  let barcodes = LS.get(KEYS.barcodes, {});
+  let catalog  = deriveCatalog(barcodes);
+
+  // ============ TAB 1: Not scanned = missing ============
+  let scans1   = LS.get(KEYS.scans1, {});
+  let missing1 = LS.get(KEYS.missing1, {});
+  let whShort1 = LS.get(KEYS.whShort1, {});
+
+  function ensureMissingSkuLoaded1(sku){
+    if(missing1[sku]) return;
+    const entry = catalog[sku]; if(!entry) return;
+    missing1[sku] = {};
+    for(const [color,setSizes] of Object.entries(entry.mapColorSizes)){
+      missing1[sku][color] = Array.from(setSizes).sort();
+    }
+    LS.set(KEYS.missing1, missing1);
+  }
+  function removeFromMissing1(sku,color,size){
+    if(!missing1[sku] || !missing1[sku][color]) return;
+    const arr = new Set(missing1[sku][color]); arr.delete(size);
+    if(arr.size) missing1[sku][color] = Array.from(arr).sort(); else delete missing1[sku][color];
+    if(missing1[sku] && Object.keys(missing1[sku]).length===0) delete missing1[sku];
+    LS.set(KEYS.missing1, missing1);
+  }
+  function renderMissingAll1(){
+    const box = $('#missingAll1'); box.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    const skus = Object.keys(missing1).sort();
+    if(skus.length===0){ box.innerHTML = '<div class="small">אין שורות ברשימת החוסרים. סרוק דגם כדי לטעון חוסרים שלו.</div>'; }
+    skus.forEach(sku => {
+      const map = missing1[sku];
+      Object.keys(map).sort().forEach(color => {
+        const row = document.createElement('div'); row.className='kv';
+        const pills = map[color].map(sz=>`<span class="pill small">${sz.toUpperCase()}</span>`).join(' ');
+        row.innerHTML = `<div><b>${escapeHtml(sku)}</b> · ${escapeHtml(color)}</div><div>${pills}</div>`;
+        frag.appendChild(row);
+      });
+    });
+    box.appendChild(frag);
+    $('#statMissing1').textContent = missingCount(missing1);
+    buildWhQueue1();
+  }
+  function renderWhShort1(){
+    const box = $('#whShortList1'); box.innerHTML='';
+    const frag = document.createDocumentFragment();
+    const skus = Object.keys(whShort1).sort();
+    if(skus.length===0){ box.innerHTML = '<div class="small">אין חוסר במחסן.</div>'; return; }
+    skus.forEach(sku=>{
+      const map = whShort1[sku];
+      Object.keys(map).sort().forEach(color=>{
+        const pills = map[color].map(sz=>`<span class="pill small">${sz.toUpperCase()}</span>`).join(' ');
+        const row = document.createElement('div'); row.className='kv';
+        row.innerHTML = `<div><b>${escapeHtml(sku)}</b> · ${escapeHtml(color)}</div><div>${pills}</div>`;
+        frag.appendChild(row);
+      });
+    });
+    box.appendChild(frag);
+  }
+  function updateStats1(){
+    $('#statBarcodes1').textContent = Object.keys(barcodes).length;
+    $('#statSkus1').textContent = Object.keys(catalog).length;
+    $('#statMissing1').textContent = missingCount(missing1);
+  }
+  function renderAll1(){ renderMissingAll1(); updateStats1(); renderWhShort1(); }
+
+  let whQueue1 = []; let whIndex1 = 0; let whSelected1 = new Set();
+  function buildWhQueue1(){ whQueue1 = []; whIndex1=0; whSelected1=new Set();
+    Object.keys(missing1).sort().forEach(sku=>{
+      const map = missing1[sku];
+      Object.keys(map).sort().forEach(color=>{ if(map[color] && map[color].length) whQueue1.push({sku,color}); });
+    });
+    renderWhWorkRow1();
+  }
+  function getLocationHint(sku){
+    const arr = LS.get(KEYS.locDB, []);
+    const hit = (arr||[]).find(x=>String(x.sku)===String(sku));
+    return hit ? hit.loc : null;
+  }
+  function renderWhWorkRow1(){
+    const skuEl=$('#wh1Sku'), colorEl=$('#wh1Color'), sizesEl=$('#wh1Sizes');
+    const idxEl=$('#wh1Index'), totEl=$('#wh1Total'), hintEl=$('#wh1Hint');
+    if(!whQueue1.length){ skuEl.textContent='—'; colorEl.textContent='—'; sizesEl.innerHTML='<div class="small">אין שורות לעבודה.</div>'; idxEl.textContent='0'; totEl.textContent='0'; hintEl.style.display='none'; return; }
+    if(whIndex1>=whQueue1.length) whIndex1=0; whSelected1 = new Set();
+    const {sku,color} = whQueue1[whIndex1];
+    skuEl.textContent = sku; colorEl.textContent = color; idxEl.textContent = String(whIndex1+1); totEl.textContent = String(whQueue1.length);
+    const sizes = (missing1[sku] && missing1[sku][color]) ? [...missing1[sku][color]] : [];
+    sizesEl.innerHTML = sizes.map(sz=>`<button class="pill" data-size="${sz}" type="button">${sz.toUpperCase()}</button>`).join('');
+    sizesEl.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ const sz=btn.dataset.size; if(whSelected1.has(sz)){ whSelected1.delete(sz); btn.classList.remove('found'); } else { whSelected1.add(sz); btn.classList.add('found'); } });
+    });
+    const loc = getLocationHint(sku);
+    if(loc){ hintEl.textContent = `רמז מיקום: ${loc}`; hintEl.style.display='block'; } else { hintEl.style.display='none'; }
+  }
+  $('#wh1Skip').addEventListener('click', ()=>{ if(!whQueue1.length) return; whIndex1=(whIndex1+1)%whQueue1.length; renderWhWorkRow1(); });
+  $('#wh1Approve').addEventListener('click', ()=>{
+    if(!whQueue1.length) return;
+    const {sku,color} = whQueue1[whIndex1];
+    const allSizes = (missing1[sku] && missing1[sku][color]) ? new Set(missing1[sku][color]) : new Set();
+    delete missing1[sku][color]; if(missing1[sku] && Object.keys(missing1[sku]).length===0) delete missing1[sku]; LS.set(KEYS.missing1, missing1);
+    const notFound = [...allSizes].filter(sz=>!whSelected1.has(sz));
+    if(notFound.length){ whShort1[sku]=whShort1[sku]||{}; whShort1[sku][color]=Array.from(new Set([...(whShort1[sku][color]||[]), ...notFound])).sort(); LS.set(KEYS.whShort1, whShort1); }
+    whSelected1.forEach(sz=>{ scans1[sku]=scans1[sku]||{}; scans1[sku][color]=scans1[sku][color]||[]; if(!scans1[sku][color].includes(sz)) scans1[sku][color].push(sz); }); LS.set(KEYS.scans1, scans1);
+    renderAll1(); toast('עודכן');
+  });
+
+  // Scan (tab1)
+  const scanInput1 = $('#scanInput1');
+  scanInput1.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ const v=scanInput1.value.trim(); if(!v) return; handleScan1(v); scanInput1.value=''; }});
+  let timer1=null; scanInput1.addEventListener('input', ()=>{ const v=scanInput1.value.trim(); if(v.length<6) return; if(timer1) clearTimeout(timer1); timer1=setTimeout(()=>{ if(scanInput1.value.trim()===v){ handleScan1(v); scanInput1.value=''; } },150); });
+  $('#importFile1').addEventListener('click', ()=> importCatalog1());
+  $('#fileInput1').addEventListener('change', ()=> importCatalog1());
+  $('#exportJson1').addEventListener('click', ()=> downloadFile('barcodes.json', JSON.stringify(barcodes,null,2)));
+  $('#exportMissingAll1').addEventListener('click', ()=> downloadFile('missing.csv', missingToCsv(missing1)));
+  $('#exportWhShort1').addEventListener('click', ()=> downloadFile('warehouse_shortage.csv', missingToCsv(whShort1)));
+  $('#clearMissing1').addEventListener('click', ()=>{ if(confirm('לנקות את רשימת החוסרים?')){ missing1={}; LS.set(KEYS.missing1,missing1); renderAll1(); }});
+  $('#resetAll1').addEventListener('click', ()=>{ if(confirm('לאפס חוסרים/חוסר מחסן/סריקות?')){ missing1={}; whShort1={}; scans1={}; LS.set(KEYS.missing1,missing1); LS.set(KEYS.whShort1,whShort1); LS.set(KEYS.scans1,scans1); renderAll1(); }});
+  $('#markUnknown1').addEventListener('click', ()=>{ const v=scanInput1.value.trim(); if(!v) return toast('אין ברקוד בשדה'); toast('לא נמצא בקטלוג'); });
+
+  function handleScan1(code){
+    const meta = barcodes[code];
+    if(!meta){ $('#lastScanNote1').textContent = `ברקוד לא נמצא בקטלוג: ${code}`; toast('לא נמצא בקטלוג'); return; }
+    const sku=String(meta.sku), color=String(meta.color), size=String(meta.size).toLowerCase();
+    ensureMissingSkuLoaded1(sku);
+    removeFromMissing1(sku,color,size);
+    scans1[sku]=scans1[sku]||{}; scans1[sku][color]=scans1[sku][color]||[]; if(!scans1[sku][color].includes(size)) scans1[sku][color].push(size); LS.set(KEYS.scans1,scans1);
+    $('#lastScanNote1').textContent = `נסרק ✓ ${code} → ${sku} / ${color} / ${size.toUpperCase()}`;
+    renderAll1();
+  }
+
+  async function importCatalog1(){
+    try{
+      const f = $('#fileInput1').files[0]; if(!f){ toast('לא נבחר קובץ'); return; }
+      const text = await f.text(); let map={};
+      try{ map = JSON.parse(text); if(Array.isArray(map)){ const tmp={}; for(const row of map){ const bc=String(row.barcode??'').trim(); if(!bc) continue; tmp[bc]={sku:String(row.sku),color:String(row.color),size:String(row.size).toLowerCase()}; } map=tmp; } }catch(e){
+        map = csvToMap(text);
+      }
+      if(Object.keys(map).length===0){ toast('קובץ לא מזוהה'); return; }
+      barcodes = map; LS.set(KEYS.barcodes,barcodes); catalog = deriveCatalog(barcodes); renderAll1(); updateStats2(); toast('ייבוא קטלוג בוצע');
+    }catch(e){ console.error(e); toast('שגיאה בייבוא'); }
+  }
+
+  // Manual add (tab1)
+  function addManual1(){
+    const bc=$('#manBarcode1').value.trim(); const sku=$('#manSku1').value.trim(); const color=$('#manColor1').value.trim(); const size=$('#manSize1').value.trim().toLowerCase();
+    if(!bc||!sku||!color||!size){ toast('נא למלא ברקוד/מק״ט/צבע/מידה'); return; }
+    barcodes[bc]={sku,color,size}; LS.set(KEYS.barcodes,barcodes); catalog=deriveCatalog(barcodes);
+    $('#manBarcode1').value=''; $('#manSku1').value=''; $('#manColor1').value=''; $('#manSize1').value=''; updateStats1(); updateStats2(); toast('נוסף לקטלוג');
+  }
+  $('#addManual1').addEventListener('click', addManual1);
+  ['manBarcode1','manSku1','manColor1','manSize1'].forEach(id=> $('#'+id).addEventListener('keydown',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); addManual1(); }}));
+
+  // ============ TAB 2: Scanned = missing with FIFO ============
+  let scans2   = LS.get(KEYS.scans2, {});
+  let missing2 = LS.get(KEYS.missing2, {});
+  let whShort2 = LS.get(KEYS.whShort2, {});
+  let order2   = LS.get(KEYS.order2, []); // array of {sku,color}
+
+  function pairKey(p){ return `${p.sku}__${p.color}`; }
+  function ensurePairInOrder(sku,color){
+    const key = pairKey({sku,color});
+    if(!order2.some(p=>pairKey(p)===key)){
+      order2.push({sku,color});
+      LS.set(KEYS.order2, order2);
+    }
+  }
+  function removePairFromOrder(sku,color){
+    const key = pairKey({sku,color});
+    order2 = order2.filter(p => pairKey(p)!==key);
+    LS.set(KEYS.order2, order2);
+  }
+
+  function renderMissingAll2(){
+    const box = $('#missingAll2'); box.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    if(order2.length===0){ box.innerHTML = '<div class="small">הרשימה ריקה — סרוק פריטים חסרים כדי להוסיף.</div>'; }
+    order2.forEach(({sku,color})=>{
+      if(!missing2[sku] || !missing2[sku][color] || !missing2[sku][color].length) return;
+      const row = document.createElement('div'); row.className='kv';
+      const pills = missing2[sku][color].map(sz=>`<span class="pill small">${sz.toUpperCase()}</span>`).join(' ');
+      row.innerHTML = `<div><b>${escapeHtml(sku)}</b> · ${escapeHtml(color)}</div><div>${pills}</div>`;
+      frag.appendChild(row);
+    });
+    box.appendChild(frag);
+    $('#statMissing2').textContent = missingCount(missing2);
+    buildWhQueue2();
+  }
+  function renderWhShort2(){
+    const box = $('#whShortList2'); box.innerHTML='';
+    const frag = document.createDocumentFragment();
+    const skus = Object.keys(whShort2).sort();
+    if(skus.length===0){ box.innerHTML = '<div class="small">אין חוסר במחסן.</div>'; return; }
+    skus.forEach(sku=>{
+      const map = whShort2[sku];
+      Object.keys(map).sort().forEach(color=>{
+        const pills = map[color].map(sz=>`<span class="pill small">${sz.toUpperCase()}</span>`).join(' ');
+        const row = document.createElement('div'); row.className='kv';
+        row.innerHTML = `<div><b>${escapeHtml(sku)}</b> · ${escapeHtml(color)}</div><div>${pills}</div>`;
+        frag.appendChild(row);
+      });
+    });
+    box.appendChild(frag);
+  }
+  function updateStats2(){
+    $('#statBarcodes2').textContent = Object.keys(barcodes).length;
+    const skusSet = new Set(Object.values(barcodes).map(v=>String(v.sku)));
+    $('#statSkus2').textContent = skusSet.size;
+  }
+  function renderAll2(){ renderMissingAll2(); updateStats2(); renderWhShort2(); }
+
+  let whQueue2 = []; let whIndex2 = 0; let whSelected2 = new Set();
+  function buildWhQueue2(){ whQueue2 = []; whIndex2=0; whSelected2=new Set();
+    // use FIFO order2, include only pairs that still exist in missing2
+    order2.forEach(({sku,color})=>{
+      if(missing2[sku] && missing2[sku][color] && missing2[sku][color].length) whQueue2.push({sku,color});
+    });
+    renderWhWorkRow2();
+  }
+  function renderWhWorkRow2(){
+    const skuEl=$('#wh2Sku'), colorEl=$('#wh2Color'), sizesEl=$('#wh2Sizes');
+    const idxEl=$('#wh2Index'), totEl=$('#wh2Total');
+    if(!whQueue2.length){ skuEl.textContent='—'; colorEl.textContent='—'; sizesEl.innerHTML='<div class="small">אין שורות לעבודה.</div>'; idxEl.textContent='0'; totEl.textContent='0'; return; }
+    if(whIndex2>=whQueue2.length) whIndex2=0; whSelected2 = new Set();
+    const {sku,color} = whQueue2[whIndex2];
+    skuEl.textContent = sku; colorEl.textContent = color; idxEl.textContent = String(whIndex2+1); totEl.textContent = String(whQueue2.length);
+    const sizes = (missing2[sku] && missing2[sku][color]) ? [...missing2[sku][color]] : [];
+    sizesEl.innerHTML = sizes.map(sz=>`<button class="pill" data-size="${sz}" type="button">${sz.toUpperCase()}</button>`).join('');
+    sizesEl.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ const sz=btn.dataset.size; if(whSelected2.has(sz)){ whSelected2.delete(sz); btn.classList.remove('found'); } else { whSelected2.add(sz); btn.classList.add('found'); } });
     });
   }
-  enforceDigits(searchSku);
-  enforceDigits(formSku);
+  $('#wh2Skip').addEventListener('click', ()=>{ if(!whQueue2.length) return; whIndex2=(whIndex2+1)%whQueue2.length; renderWhWorkRow2(); });
+  $('#wh2Approve').addEventListener('click', ()=>{
+    if(!whQueue2.length) return;
+    const {sku,color} = whQueue2[whIndex2];
+    const allSizes = (missing2[sku] && missing2[sku][color]) ? new Set(missing2[sku][color]) : new Set();
+    delete missing2[sku][color]; if(missing2[sku] && Object.keys(missing2[sku]).length===0) delete missing2[sku];
+    LS.set(KEYS.missing2, missing2);
+    // remove this pair from FIFO order
+    removePairFromOrder(sku,color);
+    const notFound = [...allSizes].filter(sz=>!whSelected2.has(sz));
+    if(notFound.length){ whShort2[sku]=whShort2[sku]||{}; whShort2[sku][color]=Array.from(new Set([...(whShort2[sku][color]||[]), ...notFound])).sort(); LS.set(KEYS.whShort2, whShort2); }
+    whSelected2.forEach(sz=>{ scans2[sku]=scans2[sku]||{}; scans2[sku][color]=scans2[sku][color]||[]; if(!scans2[sku][color].includes(sz)) scans2[sku][color].push(sz); }); LS.set(KEYS.scans2, scans2);
+    renderAll2(); toast('עודכן');
+  });
 
-  function render(){
-    const data = load().sort((a,b)=>a.sku.localeCompare(b.sku,'he'));
-    tbody.innerHTML = "";
-    countEl.textContent = data.length ? `(${data.length})` : "";
-    if(!data.length){
-      const tr = document.createElement("tr");
-      const td = document.createElement("td");
-      td.colSpan = 3;
-      td.textContent = "אין נתונים עדיין";
-      td.className = "muted";
-      tr.appendChild(td);
-      tbody.appendChild(tr);
-      return;
-    }
+  // Scan (tab2): Scanned = missing with FIFO order
+  const scanInput2 = $('#scanInput2');
+  scanInput2.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ const v=scanInput2.value.trim(); if(!v) return; handleScan2(v); scanInput2.value=''; }});
+  let timer2=null; scanInput2.addEventListener('input', ()=>{ const v=scanInput2.value.trim(); if(v.length<6) return; if(timer2) clearTimeout(timer2); timer2=setTimeout(()=>{ if(scanInput2.value.trim()===v){ handleScan2(v); scanInput2.value=''; } },150); });
+  $('#markUnknown2').addEventListener('click', ()=>{ const v=scanInput2.value.trim(); if(!v) return toast('אין ברקוד בשדה'); toast('לא נמצא בקטלוג'); });
+  $('#exportMissingAll2').addEventListener('click', ()=> downloadFile('missing_scanned.csv', missingToCsv(missing2)));
+  $('#exportWhShort2').addEventListener('click', ()=> downloadFile('warehouse_shortage_scanned.csv', missingToCsv(whShort2)));
+  $('#clearMissing2').addEventListener('click', ()=>{ if(confirm('לנקות את רשימת החוסרים?')){ missing2={}; order2=[]; LS.set(KEYS.missing2,missing2); LS.set(KEYS.order2,order2); renderAll2(); }});
+  $('#resetAll2').addEventListener('click', ()=>{ if(confirm('לאפס חוסרים/חוסר מחסן/סריקות (דף 2)?')){ missing2={}; whShort2={}; scans2={}; order2=[]; LS.set(KEYS.missing2,missing2); LS.set(KEYS.whShort2,whShort2); LS.set(KEYS.scans2,scans2); LS.set(KEYS.order2,order2); renderAll2(); }});
+
+  function handleScan2(code){
+    const meta = barcodes[code];
+    if(!meta){ $('#lastScanNote2').textContent = `ברקוד לא נמצא בקטלוג: ${code}`; toast('לא נמצא בקטלוג'); return; }
+    const sku=String(meta.sku), color=String(meta.color), size=String(meta.size).toLowerCase();
+    const isNewPair = !(missing2[sku] && missing2[sku][color] && missing2[sku][color].length);
+    missing2[sku]=missing2[sku]||{}; const set = new Set(missing2[sku][color]||[]); set.add(size); missing2[sku][color]=Array.from(set).sort(); LS.set(KEYS.missing2,missing2);
+    if(isNewPair){ ensurePairInOrder(sku,color); }
+    $('#lastScanNote2').textContent = `נוסף לרשימת חוסרים: ${sku} / ${color} / ${size.toUpperCase()}`;
+    renderAll2();
+  }
+
+  // ============ TAB 3: Locations ============
+  const LSK = KEYS.locDB;
+  const locLoad = ()=> LS.get(LSK, []);
+  const locSave = (arr)=> LS.set(LSK, arr);
+  // Loosened validation: letters/digits/dashes, length 2-16
+  const validSku = (v)=> /^[A-Za-z0-9\-]{2,16}$/.test(String(v||'').trim());
+  function renderLocTable(){
+    const tbody = $('#locTbody'); if(!tbody) return;
+    tbody.innerHTML='';
+    const data = locLoad().sort((a,b)=> String(a.sku).localeCompare(String(b.sku)));
+    if(!data.length){ const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=3; td.className='small'; td.textContent='אין נתונים עדיין'; tr.appendChild(td); tbody.appendChild(tr); return; }
     for(const row of data){
-      const tr = document.createElement("tr");
-      tr.className = "clickable-row";
-      const tdSku = document.createElement("td");
-      const tdLoc = document.createElement("td");
-      const tdAct = document.createElement("td");
-      tdSku.textContent = row.sku;
-      tdLoc.textContent = row.loc;
-
-      const copyBtn = document.createElement("button");
-      copyBtn.textContent = "העתק";
-      copyBtn.className = "ghost";
-      copyBtn.onclick = async (e)=> {
-        e.stopPropagation();
-        await navigator.clipboard.writeText(row.loc);
-        toast(`הועתק: ${row.loc}`);
-      };
-
-      const delBtn = document.createElement("button");
-      delBtn.textContent = "מחק";
-      delBtn.className = "danger";
-      delBtn.onclick = (e)=> {
-        e.stopPropagation();
-        const arr = load().filter(x=>x.sku!==row.sku);
-        save(arr); render(); toast("נמחק");
-      };
-
-      tr.onclick = ()=>{
-        formSku.value = row.sku;
-        formLoc.value = row.loc;
-        formLoc.focus();
-      };
-
-      tdAct.append(copyBtn, " ", delBtn);
-      tr.append(tdSku, tdLoc, tdAct);
-      tbody.appendChild(tr);
+      const tr=document.createElement('tr');
+      const tdSku=document.createElement('td'); const tdLoc=document.createElement('td'); const tdAct=document.createElement('td');
+      tdSku.textContent=row.sku; tdLoc.textContent=row.loc;
+      const copy=document.createElement('button'); copy.textContent='העתק'; copy.className='ghost'; copy.onclick=async()=>{ await navigator.clipboard.writeText(row.loc); toast('הועתק'); };
+      const del=document.createElement('button'); del.textContent='מחק'; del.className='danger'; del.onclick=()=>{ const arr=locLoad().filter(x=>String(x.sku)!==String(row.sku)); locSave(arr); renderLocTable(); toast('נמחק'); };
+      tdAct.append(copy,' ',del); tr.append(tdSku,tdLoc,tdAct); tbody.appendChild(tr);
     }
   }
+  function doLocSearch(){
+    const sku = String($('#locSearchSku').value||'').trim();
+    const r = locLoad().find(x=>String(x.sku)===sku);
+    const box = $('#locSearchResult');
+    if(r){ box.textContent=`המיקום של ${sku}: ${r.loc}`; box.style.display='block'; }
+    else { box.textContent=`לא נמצא מק״ט ${sku}.`; box.style.display='block'; }
+  }
+  $('#btnLocSearch').addEventListener('click', doLocSearch);
+  $('#locSearchSku').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); doLocSearch(); }});
 
-  function toast(msg){
-    formMsg.style.display = "block";
-    formMsg.textContent = msg;
-    clearTimeout(toast._t);
-    toast._t = setTimeout(()=>{ formMsg.style.display = "none"; }, 1600);
+  // Collapsible toggle (default: collapsed)
+  const locHeader = $('#locCollapseHeader');
+  const locContent = $('#locCollapseContent');
+  if(locHeader){
+    locHeader.addEventListener('click', ()=>{
+      const isHidden = locContent.style.display === 'none' || locContent.style.display === '';
+      locContent.style.display = isHidden ? 'block' : 'none';
+      locHeader.classList.toggle('collapsed', !isHidden);
+    });
   }
 
-  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[m])); }
+  $('#btnLocAdd').addEventListener('click', ()=>{
+    const sku = String($('#locFormSku').value||'').trim();
+    const loc = String($('#locFormLoc').value||'').trim();
+    if(!validSku(sku)) return showLocMsg('מק״ט לא תקין. מותר אותיות/ספרות/מקף, אורך 2–16.');
+    if(!loc) return showLocMsg('צריך למלא מיקום.');
+    const arr=locLoad(); if(arr.some(x=>String(x.sku)===sku)) return showLocMsg('קיים כבר מק״ט כזה. השתמש בעדכון.');
+    arr.push({sku,loc}); locSave(arr); renderLocTable(); showLocMsg('נוסף בהצלחה.');
+  });
+  $('#btnLocUpdate').addEventListener('click', ()=>{
+    const sku = String($('#locFormSku').value||'').trim();
+    const loc = String($('#locFormLoc').value||'').trim();
+    if(!validSku(sku)) return showLocMsg('מק״ט לא תקין. מותר אותיות/ספרות/מקף, אורך 2–16.');
+    if(!loc) return showLocMsg('צריך למלא מיקום.');
+    const arr=locLoad(); const idx=arr.findIndex(x=>String(x.sku)===sku);
+    if(idx<0) return showLocMsg('לא קיים מק״ט כזה. הוסף חדש.');
+    arr[idx].loc=loc; locSave(arr); renderLocTable(); showLocMsg('עודכן בהצלחה.');
+  });
+  function showLocMsg(msg){ const el=$('#locFormMsg'); el.textContent=msg; el.style.display='block'; setTimeout(()=> el.style.display='none', 1500); }
 
-  function doSearch(){
-    const sku = normalizeSku(searchSku.value);
-    searchResult.style.display = "block";
-
-    if(!validSku(sku)){
-      searchResult.innerHTML = "מק״ט לא תקין — צריך 4–5 ספרות.";
-      return;
-    }
-
-    const hit = load().find(x=>x.sku===sku);
-    if(!hit){
-      searchResult.innerHTML = `לא נמצא מק״ט ${sku}.`;
-      return;
-    }
-
-    const loc = escapeHtml(hit.loc);
-    searchResult.innerHTML = `
-      <div class="bigCard">
-        <div>
-          <div class="skuLine">המיקום של <strong>${sku}</strong>:</div>
-          <div class="locBig" dir="ltr">${loc}</div>
-        </div>
-        <div class="actions">
-          <button class="ghost" id="btnCopyLoc">העתק</button>
-        </div>
-      </div>
-    `;
-
-    const copyBtn = document.getElementById("btnCopyLoc");
-    if(copyBtn){
-      copyBtn.onclick = async ()=>{
-        await navigator.clipboard.writeText(hit.loc);
-        toast(`הועתק: ${hit.loc}`);
-      };
-    }
-  }
-
-  function addNew(){
-    const sku = normalizeSku(formSku.value);
-    const loc = (formLoc.value||"").trim();
-    if(!validSku(sku)) return toast("מק״ט לא תקין (4–5 ספרות).");
-    if(!loc) return toast("צריך למלא מיקום.");
-    const arr = load();
-    if(arr.some(x=>x.sku===sku)) return toast("קיים כבר מק״ט כזה. השתמש בעדכון.");
-    arr.push({sku, loc});
-    save(arr); render(); toast("נוסף בהצלחה.");
-  }
-
-  function updateLoc(){
-    const sku = normalizeSku(formSku.value);
-    const loc = (formLoc.value||"").trim();
-    if(!validSku(sku)) return toast("מק״ט לא תקין (4–5 ספרות).");
-    if(!loc) return toast("צריך למלא מיקום.");
-    const arr = load();
-    const idx = arr.findIndex(x=>x.sku===sku);
-    if(idx<0) return toast("לא קיים מק״ט כזה. הוסף חדש.");
-    arr[idx].loc = loc;
-    save(arr); render(); toast("עודכן בהצלחה.");
-  }
-
-  btnSearch.addEventListener("click", doSearch);
-  searchSku.addEventListener("keydown", (e)=>{ if(e.key==="Enter"){ e.preventDefault(); doSearch(); } });
-
-  btnAdd.addEventListener("click", (e)=>{ e.preventDefault(); addNew(); });
-  btnUpdate.addEventListener("click", (e)=>{ e.preventDefault(); updateLoc(); });
-
-  formLoc.addEventListener("keydown", (e)=>{
-    if(e.key==="Enter"){ e.preventDefault(); updateLoc(); }
+  $('#btnLocExport').addEventListener('click', ()=>{
+    const data = locLoad();
+    downloadFile('warehouse-mini.json', JSON.stringify(data,null,2));
+  });
+  $('#btnLocImport').addEventListener('click', ()=>{ $('#locFileInput').click(); });
+  $('#btnLocWipe').addEventListener('click', ()=>{ if(confirm('למחוק את כל נתוני המיקומים?')){ locSave([]); renderLocTable(); toast('נוקה.'); }});
+  $('#btnLocImportFile').addEventListener('click', async ()=>{
+    const f = $('#locFileInput').files[0]; if(!f) return toast('לא נבחר קובץ');
+    const text = await f.text();
+    try{
+      const data = JSON.parse(text);
+      if(!Array.isArray(data)) throw new Error('bad');
+      const clean=[]; for(const r of data){ if(r && r.sku && r.loc && /^[A-Za-z0-9\-]{2,16}$/.test(String(r.sku))){ clean.push({sku:String(r.sku), loc:String(r.loc)}); } }
+      locSave(clean); renderLocTable(); toast('ייבוא הושלם');
+    }catch(e){ toast('שגיאה בייבוא'); }
   });
 
-  btnExport.addEventListener("click", ()=>{
-    const data = load().sort((a,b)=>a.sku.localeCompare(b.sku,'he'));
-    const blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "warehouse-mini.json"; a.click();
-    URL.revokeObjectURL(url);
-  });
-
-  btnImport.addEventListener("click", ()=>{
-    const inp = document.createElement("input");
-    inp.type = "file"; inp.accept = "application/json";
-    inp.onchange = ()=>{
-      const file = inp.files[0];
-      if(!file) return;
-      const fr = new FileReader();
-      fr.onload = ()=>{
-        try{
-          const data = JSON.parse(fr.result);
-          if(!Array.isArray(data)) throw new Error("פורמט לא תקין");
-          const clean = [];
-          for(const r of data){
-            if(r && typeof r.sku==="string" && typeof r.loc==="string" && validSku(r.sku) && r.loc.trim()){
-              clean.push({sku:r.sku.trim(), loc:r.loc.trim()});
-            }
-          }
-          save(clean); render(); toast("ייבוא הושלם.");
-        }catch(e){ toast("שגיאה בייבוא."); }
-      };
-      fr.readAsText(file);
-    };
-    inp.click();
-  });
-
-  btnWipe.addEventListener("click", ()=>{
-    const code = prompt("להמשך מחיקה הזן/ני קוד:");
-    if(code !== "6165"){ toast("קוד מחיקה שגוי."); return; }
-    if(!confirm("אישור סופי: למחוק את כל הנתונים המקומיים?")){
-      toast("בוטל.");
-      return;
-    }
-    save([]); render(); toast("נוקה.");
-  });
-
-  window.addEventListener("load", ()=> setTimeout(()=> searchSku.focus(), 100));
-
-  render();
+  // ---------- Initial renders ----------
+  renderAll1();
+  renderAll2();
+  renderLocTable();
 })();
 </script>
 </body>
