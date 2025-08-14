@@ -3,7 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>חבילת חוסרים ומיקומים — גרסה 4 (תיקונים)</title>
+<title>L2F</title>
+  
+<link id="dynamic-favicon" rel="icon">
+<script>
+  function setFaviconFromChar(char) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    ctx.font = '48px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(char, 32, 32);
+    const link = document.getElementById('dynamic-favicon');
+    link.href = canvas.toDataURL('image/png');
+  }
+
+  // דוגמה: לשים אימוג׳י מחסנית 📦 כפאביקון
+  setFaviconFromChar('📦');
+</script>
 <style>
   :root{
     --bg:#f6f7fb; --card:#ffffff; --text:#0f172a; --muted:#64748b;
@@ -275,6 +294,7 @@
 <div id="toast"></div>
 
 <script>
+  
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => Array.from(document.querySelectorAll(s));
