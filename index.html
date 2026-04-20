@@ -29,7 +29,18 @@
   *{box-sizing:border-box}
   html,body{height:100%; margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
   .wrap{max-width:1300px; margin:0 auto; padding:16px}
-  header{display:flex; gap:12px; align-items:center; justify-content:space-between; margin-bottom:12px}
+  header{display:flex; gap:12px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; margin-bottom:12px}
+  .brand{display:flex; flex-direction:column; gap:4px}
+  .brand-row{display:flex; align-items:center; gap:8px}
+  .brand-title{font-size:52px; line-height:1; font-weight:800}
+  .usage-toggle{display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; padding:0; border-radius:8px}
+  .usage-toggle-icon{display:inline-block; font-size:18px; line-height:1; transition:transform .2s ease}
+  .usage-toggle[aria-expanded="true"] .usage-toggle-icon{transform:rotate(180deg)}
+  .usage-card{min-width:290px; max-width:100%}
+  .usage-card[hidden]{display:none !important}
+  .usage-grid{display:grid; grid-template-columns:repeat(2, minmax(120px, 1fr)); gap:8px; margin-bottom:8px}
+  .usage-item{padding:10px; border:1px solid var(--border); border-radius:8px; background:#f8fafc}
+  .usage-value{font-size:26px; line-height:1.1; font-weight:800}
   .tabs{display:flex; gap:8px; background:var(--tab); border:1px solid var(--border); border-radius:12px; padding:6px; position:sticky; top:0; z-index:10}
   .tab{padding:10px 12px; border-radius:10px; cursor:pointer; color:var(--muted)}
   .tab.active{background:#fff; color:var(--text); border:1px solid var(--border); box-shadow:0 2px 8px rgba(0,0,0,.05)}
@@ -69,7 +80,6 @@
   .chev{transition:transform .2s ease}
   .collapsed .chev{transform:rotate(180deg)}
   .collapse-content{margin-top:8px}
-
   /* === L2F Patch: Big in-flow result box for location search === */
   #locSearchResult.locResultBox{
     display:none; min-height:33vh; background:#ecfeff; color:var(--text);
@@ -85,13 +95,38 @@
     background:#111827; color:#fff; display:none; text-align:center; box-shadow:0 10px 34px rgba(0,0,0,.35);
     font-size:18px; font-weight:700; }
   #scanModal.success{ background:#065f46; } #scanModal.error{ background:#7f1d1d; }
+  @media (max-width:760px){
+    .brand-title{font-size:40px}
+    .usage-grid{grid-template-columns:1fr}
+    .usage-card{width:100%}
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <font size="10">L2F</font>
-    <span class="small">© 2025 [יאיר קרשיגייב]. כל הזכויות שמורות.</span>
+    <div class="brand">
+      <div class="brand-row">
+        <div class="brand-title">L2F</div>
+        <button type="button" id="usageToggle" class="ghost usage-toggle" aria-expanded="false" aria-controls="usagePanel" title="הצג נתוני שימוש">
+          <span class="usage-toggle-icon">▾</span>
+        </button>
+      </div>
+      <span class="small">© 2025 [יאיר קרשיגייב]. כל הזכויות שמורות.</span>
+    </div>
+    <div class="card usage-card" id="usagePanel" hidden>
+      <div class="usage-grid">
+        <div class="usage-item">
+          <div class="small">כניסות כוללות</div>
+          <div class="usage-value num" id="usageVisits">--</div>
+        </div>
+        <div class="usage-item">
+          <div class="small">מכשירים ייחודיים</div>
+          <div class="usage-value num" id="usageDevices">--</div>
+        </div>
+      </div>
+      <div class="small" id="usageNote">הנתונים יופיעו כאן אחרי העלאה ל-GitHub Pages.</div>
+    </div>
   </header>
 
   <nav class="tabs">
@@ -342,6 +377,17 @@
     }catch(e){}
   }
 
+  const usageToggle = $('#usageToggle');
+  const usagePanel = $('#usagePanel');
+  function setUsagePanel(open){
+    if(!usageToggle || !usagePanel) return;
+    usagePanel.hidden = !open;
+    usageToggle.setAttribute('aria-expanded', String(open));
+  }
+  if(usageToggle && usagePanel){
+    usageToggle.addEventListener('click', ()=> setUsagePanel(usagePanel.hidden));
+  }
+
 
   // Tabs
   $$('.tab').forEach(tab => tab.addEventListener('click', () => {
@@ -368,8 +414,60 @@
     whShort2: 'wh_short_scanned',
     order2:   'order_missing_scanned',
     // Locations
-    locDB:    'warehouseMiniDB'
+    locDB:    'warehouseMiniDB',
+    usageDeviceSeen: 'usage_device_seen_v1'
   };
+
+  const COUNTER = {
+    baseUrl: 'https://api.countapi.xyz',
+    namespace: `l2f-${slugify(location.hostname || 'local')}-${slugify(location.pathname || 'index')}`,
+    visitsKey: 'visits',
+    devicesKey: 'devices'
+  };
+  function slugify(value){
+    return String(value || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'root';
+  }
+  function formatCounterValue(value){
+    const num = Number(value);
+    return Number.isFinite(num) ? num.toLocaleString('he-IL') : '--';
+  }
+  function setUsageStats(visits, devices, note){
+    $('#usageVisits').textContent = visits;
+    $('#usageDevices').textContent = devices;
+    $('#usageNote').textContent = note;
+  }
+  async function fetchCounter(action, key){
+    const url = `${COUNTER.baseUrl}/${action}/${encodeURIComponent(COUNTER.namespace)}/${encodeURIComponent(key)}`;
+    const res = await fetch(url, { cache: 'no-store' });
+    if(!res.ok) throw new Error(`Counter request failed: ${res.status}`);
+    return res.json();
+  }
+  async function initUsageStats(){
+    if(!$('#usageVisits') || !$('#usageDevices') || !$('#usageNote')) return;
+    if(location.protocol === 'file:'){
+      setUsageStats('--', '--', 'המונה יתחיל לעבוד אחרי העלאה ל-GitHub Pages.');
+      return;
+    }
+    setUsageStats('...', '...', 'טוען נתוני שימוש...');
+    try{
+      const knownDevice = LS.get(KEYS.usageDeviceSeen, false) === true;
+      const visitsPromise = fetchCounter('hit', COUNTER.visitsKey);
+      const devicesPromise = knownDevice ? fetchCounter('get', COUNTER.devicesKey) : fetchCounter('hit', COUNTER.devicesKey);
+      const [visitsData, devicesData] = await Promise.all([visitsPromise, devicesPromise]);
+      if(!knownDevice) LS.set(KEYS.usageDeviceSeen, true);
+      setUsageStats(
+        formatCounterValue(visitsData.value),
+        formatCounterValue(devicesData.value),
+        'ספירה שמתאימה ל-GitHub Pages: דפדפנים ייחודיים בקירוב, לא משתמשים מזוהים.'
+      );
+    }catch(err){
+      console.error(err);
+      setUsageStats('--', '--', 'לא הצלחתי לטעון את המונה מרחוק. שאר האתר ממשיך לעבוד כרגיל.');
+    }
+  }
 
   // Helpers
   const deriveCatalog = (barcodes) => {
@@ -407,7 +505,6 @@
   // Shared data
   let barcodes = LS.get(KEYS.barcodes, {});
   let catalog  = deriveCatalog(barcodes);
-
   function findBarcodeByTriple(sku,color,size){
     size=String(size).toLowerCase();
     for(const [bc,meta] of Object.entries(barcodes)){
@@ -907,6 +1004,7 @@
 
   // Initial renders
   function updateStats2(){ $('#statBarcodes2').textContent = Object.keys(barcodes).length; const skusSet = new Set(Object.values(barcodes).map(v=>String(v.sku))); $('#statSkus2').textContent = skusSet.size; }
+  initUsageStats();
   renderAll1(); renderAll2(); renderLocTable();
 })();
 </script>
